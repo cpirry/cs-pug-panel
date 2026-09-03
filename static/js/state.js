@@ -20,6 +20,7 @@ import {
   metaUptimeEl,
 } from "./dom.js";
 import { renderAuth } from "./auth.js";
+import { renderLobby } from "./lobby.js";
 import { renderMaps, activateMapTabFor } from "./maps.js";
 import { renderMods } from "./mods.js";
 import { maxToTeamSize, applyGameModeLock } from "./settings.js";
@@ -47,6 +48,7 @@ export async function loadState() {
   const state = await res.json();
   setStatus(state.running, state.status);
   renderAuth(state.auth);
+  renderLobby(state.auth, state.lobby);
   renderConsole();
   updateLaunchButtonLabel(state.running, null);
   renderMaps(state.maps, state.selectedMap);

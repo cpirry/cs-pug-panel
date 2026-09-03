@@ -29,6 +29,12 @@ import {
   presetName,
   presetSaveBtn,
   steamLogoutBtn,
+  lobbyCreateBtn,
+  lobbyJoinInput,
+  lobbyJoinBtn,
+  lobbyLeaveBtn,
+  lobbyStartBtn,
+  lobbyResetBtn,
 } from "./dom.js";
 import { selectedMap, selectedMapSource } from "./maps.js";
 import {
@@ -41,11 +47,52 @@ import {
 } from "./settings.js";
 import { pushRconHistory, renderConsole } from "./console.js";
 import { loadConfig, renderPresets } from "./config.js";
+import { createLobby, joinLobby, leaveLobby, startMatch, resetLobby } from "./lobby.js";
 import { loadState, refreshMaps, pollTail } from "./state.js";
 
 steamLogoutBtn.addEventListener("click", async () => {
   await fetch("/api/auth/logout", { method: "POST" });
   await loadState();
+});
+
+lobbyCreateBtn.addEventListener("click", async () => {
+  lobbyCreateBtn.disabled = true;
+  await createLobby();
+  await loadState();
+  lobbyCreateBtn.disabled = false;
+});
+
+lobbyJoinBtn.addEventListener("click", async () => {
+  const code = lobbyJoinInput.value.trim();
+  if (!code) return;
+  lobbyJoinBtn.disabled = true;
+  const ok = await joinLobby(code);
+  if (ok) lobbyJoinInput.value = "";
+  await loadState();
+  lobbyJoinBtn.disabled = false;
+});
+
+lobbyLeaveBtn.addEventListener("click", async () => {
+  lobbyLeaveBtn.disabled = true;
+  await leaveLobby();
+  await loadState();
+  lobbyLeaveBtn.disabled = false;
+});
+
+lobbyStartBtn.addEventListener("click", async () => {
+  lobbyStartBtn.disabled = true;
+  lobbyStartBtn.textContent = "Starting...";
+  await startMatch();
+  await loadState();
+  lobbyStartBtn.textContent = "Start Match";
+  lobbyStartBtn.disabled = false;
+});
+
+lobbyResetBtn.addEventListener("click", async () => {
+  lobbyResetBtn.disabled = true;
+  await resetLobby();
+  await loadState();
+  lobbyResetBtn.disabled = false;
 });
 
 wirePasswordToggle(rconPasswordInput, rconPasswordToggle);

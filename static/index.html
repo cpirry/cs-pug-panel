@@ -24,6 +24,28 @@
       </div>
     </header>
 
+    <div class="lobby-bar" id="lobbyBar" hidden>
+      <div class="lobby-empty" id="lobbyEmpty">
+        <button type="button" id="lobbyCreateBtn" class="btn btn-primary">Create Lobby</button>
+        <span class="lobby-or">or</span>
+        <input type="text" id="lobbyJoinInput" placeholder="Enter code...">
+        <button type="button" id="lobbyJoinBtn" class="btn btn-primary">Join</button>
+      </div>
+      <div class="lobby-active" id="lobbyActive" hidden>
+        <span class="lobby-code-label">Lobby code:</span>
+        <span class="lobby-code" id="lobbyCode"></span>
+        <div class="lobby-members" id="lobbyMembers"></div>
+        <button type="button" id="lobbyStartBtn" class="btn btn-primary" hidden>Start Match</button>
+        <div class="lobby-connect" id="lobbyConnect" hidden>
+          <a href="#" id="lobbyConnectLink" class="lobby-connect-link" hidden>Join Match</a>
+          <span id="lobbyConnectText" class="lobby-connect-text"></span>
+        </div>
+        <button type="button" id="lobbyResetBtn" class="btn btn-primary" hidden>New Match</button>
+        <button type="button" id="lobbyLeaveBtn" class="steam-logout-btn">Leave Lobby</button>
+      </div>
+      <span class="msg" id="lobbyMsg"></span>
+    </div>
+
     <div class="server-heading">
       <h1>cs2_server <span id="status" class="status-pill">unknown</span></h1>
       <div class="server-meta">
