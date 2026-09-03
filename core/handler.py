@@ -3,6 +3,7 @@
 
 import json
 import os
+from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler
 from urllib.error import URLError
 from urllib.parse import parse_qs, unquote, urlparse
@@ -44,6 +45,16 @@ from .mods import toggle_mod, write_game_mode
 from .proc_status import container_status, server_uptime_seconds, tail_console, tail_logs
 from .rcon import RconError, rcon_command
 from .state import build_state
+from .steam_auth import (
+    SESSION_COOKIE,
+    SESSION_MAX_AGE,
+    build_login_url,
+    create_session,
+    destroy_session,
+    fetch_player_summary,
+    session_steam_id,
+    verify_callback,
+)
 from .util import run, sanitize_cvar_string
 
 
@@ -51,11 +62,13 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
-    def _send_json(self, payload, status=200):
+    def _send_json(self, payload, status=200, headers=None):
         body = json.dumps(payload).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        for key, value in (headers or {}).items():
+            self.send_header(key, value)
         self.end_headers()
         self.wfile.write(body)
 
@@ -82,10 +95,60 @@ class Handler(BaseHTTPRequestHandler):
             return {}
         return json.loads(self.rfile.read(length))
 
+    def _request_origin(self):
+        proto = self.headers.get("X-Forwarded-Proto", "http")
+        host = self.headers.get("Host", "localhost")
+        return f"{proto}://{host}"
+
+    def _session_token(self):
+        cookie_header = self.headers.get("Cookie")
+        if not cookie_header:
+            return None
+        cookie = SimpleCookie()
+        cookie.load(cookie_header)
+        morsel = cookie.get(SESSION_COOKIE)
+        return morsel.value if morsel else None
+
+    def _session_cookie_header(self, token=None, clear=False):
+        if clear:
+            return f"{SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
+        return f"{SESSION_COOKIE}={token}; Path=/; Max-Age={SESSION_MAX_AGE}; HttpOnly; SameSite=Lax"
+
+    def _auth_info(self):
+        steam_id = session_steam_id(self._session_token())
+        if not steam_id:
+            return {"loggedIn": False}
+        summary = fetch_player_summary(steam_id) or {}
+        return {
+            "loggedIn": True,
+            "steamId": steam_id,
+            "displayName": summary.get("personaName", steam_id),
+            "avatar": summary.get("avatar", ""),
+        }
+
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/api/state":
-            self._send_json(build_state())
+            state = build_state()
+            state["auth"] = self._auth_info()
+            self._send_json(state)
+            return
+        if parsed.path == "/auth/steam/login":
+            origin = self._request_origin()
+            login_url = build_login_url(return_to=f"{origin}/auth/steam/callback", realm=origin)
+            self.send_response(302)
+            self.send_header("Location", login_url)
+            self.end_headers()
+            return
+        if parsed.path == "/auth/steam/callback":
+            params = {k: v[0] for k, v in parse_qs(parsed.query).items() if k.startswith("openid.")}
+            steam_id = verify_callback(params)
+            self.send_response(302)
+            self.send_header("Location", "/")
+            if steam_id:
+                token = create_session(steam_id)
+                self.send_header("Set-Cookie", self._session_cookie_header(token=token))
+            self.end_headers()
             return
         if parsed.path == "/api/tail":
             qs = parse_qs(parsed.query)
@@ -311,6 +374,11 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/api/stop":
             code, out, err = run(["docker", "stop", CONTAINER], timeout=30)
             self._send_json({"ok": code == 0, "output": out + err})
+            return
+
+        if parsed.path == "/api/auth/logout":
+            destroy_session(self._session_token())
+            self._send_json({"ok": True}, headers={"Set-Cookie": self._session_cookie_header(clear=True)})
             return
 
         self._send_json({"error": "not found"}, 404)

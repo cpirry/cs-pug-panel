@@ -58,6 +58,57 @@ body {
   color: var(--text);
 }
 
+.steam-auth {
+  display: flex;
+  align-items: center;
+}
+
+.steam-login-btn[hidden] {
+  display: none;
+}
+
+.steam-login-btn {
+  display: flex;
+  line-height: 0;
+}
+
+.steam-login-btn img {
+  display: block;
+}
+
+.steam-account[hidden] {
+  display: none;
+}
+
+.steam-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.steam-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.steam-logout-btn {
+  border: 1px solid rgba(229, 72, 77, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.steam-logout-btn:hover {
+  background: rgba(229, 72, 77, 0.1);
+}
+
 .status-pill {
   padding: 6px 12px;
   border-radius: 999px;
