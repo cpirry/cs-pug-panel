@@ -1,0 +1,39 @@
+// dom.js
+// Purpose: Shared DOM element references used across the other modules.
+
+export const statusEl = document.getElementById("status");
+export const mapsCoreEl = document.getElementById("mapsCore");
+export const mapsExtraEl = document.getElementById("mapsExtra");
+export const mapsWorkshopEl = document.getElementById("mapsWorkshop");
+export const modsEl = document.getElementById("mods");
+export const playersEl = document.getElementById("players");
+export const consoleEl = document.getElementById("console");
+export const logsEl = document.getElementById("logs");
+export const launchBtn = document.getElementById("launchBtn");
+export const launchBtnIdleLabel = launchBtn.textContent;
+export const stopBtn = document.getElementById("stopBtn");
+export const mapBtn = document.getElementById("mapBtn");
+export const mapMsg = document.getElementById("mapMsg");
+export const rconForm = document.getElementById("rconForm");
+export const rconInput = document.getElementById("rconInput");
+export const rconSend = document.getElementById("rconSend");
+export const configFileSelect = document.getElementById("configFileSelect");
+export const configEditor = document.getElementById("configEditor");
+export const configSaveBtn = document.getElementById("configSaveBtn");
+export const configMsg = document.getElementById("configMsg");
+export const presetName = document.getElementById("presetName");
+export const presetSaveBtn = document.getElementById("presetSaveBtn");
+export const presetList = document.getElementById("presetList");
+export const maxPlayersInput = document.getElementById("maxPlayers");
+export const rconPasswordInput = document.getElementById("rconPassword");
+export const serverPasswordInput = document.getElementById("serverPassword");
+export const rconPasswordToggle = document.getElementById("rconPasswordToggle");
+export const serverPasswordToggle = document.getElementById("serverPasswordToggle");
+export const workshopInput = document.getElementById("workshopInput");
+export const workshopAddBtn = document.getElementById("workshopAddBtn");
+export const workshopMsg = document.getElementById("workshopMsg");
+export const serverNameInput = document.getElementById("serverName");
+export const ctTeamNameInput = document.getElementById("ctTeamName");
+export const tTeamNameInput = document.getElementById("tTeamName");
+export const metaMapEl = document.getElementById("metaMap");
+export const metaUptimeEl = document.getElementById("metaUptime");

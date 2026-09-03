@@ -1,0 +1,4 @@
+.*ignore
+*.md
+*.txt
+build.sh
