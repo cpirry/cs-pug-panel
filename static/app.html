@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CS2 Server Panel</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon">&gt;_</span>
+        <span class="brand-name">CS2 Panel</span>
+      </div>
+      <div class="steam-auth">
+        <a href="/auth/steam/login" id="steamLoginLink" class="steam-login-btn">
+          <img src="https://community.akamai.steamstatic.com/public/images/signinthroughsteam/sits_small.png" alt="Sign in through Steam">
+        </a>
+        <div class="steam-account" id="steamAccount" hidden>
+          <img id="steamAvatar" class="steam-avatar" alt="" hidden>
+          <span id="steamName"></span>
+          <button type="button" id="steamLogoutBtn" class="steam-logout-btn">Log Out</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="lobby-bar" id="lobbyBar" hidden>
+      <div class="lobby-empty" id="lobbyEmpty">
+        <button type="button" id="lobbyCreateBtn" class="btn btn-primary">Create Lobby</button>
+        <span class="lobby-or">or</span>
+        <input type="text" id="lobbyJoinInput" placeholder="Enter code...">
+        <button type="button" id="lobbyJoinBtn" class="btn btn-primary">Join</button>
+      </div>
+      <div class="lobby-active" id="lobbyActive" hidden>
+        <span class="lobby-code-label">Lobby code:</span>
+        <span class="lobby-code" id="lobbyCode"></span>
+        <div class="lobby-members" id="lobbyMembers"></div>
+        <button type="button" id="lobbyStartBtn" class="btn btn-primary" hidden>Start Match</button>
+        <div class="lobby-connect" id="lobbyConnect" hidden>
+          <a href="#" id="lobbyConnectLink" class="lobby-connect-link" hidden>Join Match</a>
+          <span id="lobbyConnectText" class="lobby-connect-text"></span>
+        </div>
+        <button type="button" id="lobbyResetBtn" class="btn btn-primary" hidden>New Match</button>
+        <button type="button" id="lobbyLeaveBtn" class="steam-logout-btn">Leave Lobby</button>
+      </div>
+      <span class="msg" id="lobbyMsg"></span>
+    </div>
+
+    <div class="server-heading">
+      <h1>cs2_server <span id="status" class="status-pill">unknown</span></h1>
+      <div class="server-meta">
+        <span>Counter-Strike 2</span>
+        <span class="dot">&middot;</span>
+        <span id="metaMap">no start map set</span>
+        <span class="dot">&middot;</span>
+        <span>Server uptime: <span id="metaUptime">--:--</span></span>
+      </div>
+    </div>
+
+    <main class="content">
+      <nav class="tabs">
+        <!-- <button class="tab-btn active" data-tab="overview">Overview</button> -->
+        <button class="tab-btn" data-tab="settings">Match Editor</button>
+        <button class="tab-btn" data-tab="config">Config Editor</button>
+      </nav>
+
+      <!-- <div class="tab-panel" data-panel="overview">
+        <section class="card">
+          <h2>Players</h2>
+          <div id="players" class="player-list"></div>
+        </section>
+      </div> -->
+
+      <div class="tab-panel" data-panel="settings" hidden>
+        <div class="split-2col">
+          <section class="card settings-card">
+            <div class="settings-columns">
+              <div class="settings-col settings-col-server">
+                <h2>Server Settings</h2>
+                <div class="field"><label>Server Name</label><input id="serverName" type="text"></div>
+                <div class="field">
+                  <label>Server Password</label>
+                  <div class="password-field">
+                    <input id="serverPassword" type="password">
+                    <button type="button" id="serverPasswordToggle" class="password-toggle">View</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>RCON Password</label>
+                  <div class="password-field">
+                    <input id="rconPassword" type="password">
+                    <button type="button" id="rconPasswordToggle" class="password-toggle">View</button>
+                  </div>
+                </div>
+                <div class="field"><label>Max Players</label><input id="maxPlayers" type="number" disabled></div>
+
+                <hr class="card-divider">
+
+                <div class="field"><input id="ctTeamName" type="text" placeholder="Counter-Terrorists"></div>
+                <div class="vs-divider">
+                  <span class="vs-divider-line"></span>
+                  <span class="vs-divider-text">vs</span>
+                  <span class="vs-divider-line"></span>
+                </div>
+                <div class="field"><input id="tTeamName" type="text" placeholder="Terrorists"></div>
+                <div class="launch-actions">
+                  <button id="launchBtn" class="btn btn-primary">Start Match</button>
+                  <button id="stopBtn" class="btn btn-danger">Stop Server</button>
+                </div>
+              </div>
+
+              <div class="settings-vrule"></div>
+
+              <div class="settings-col">
+                <h2>Game Mode</h2>
+                <div class="segmented-rows">
+                  <div id="gameModesRow1" class="segmented">
+                    <label><input type="radio" name="gameMode" value="versus" checked><span>Versus</span></label>
+                    <label><input type="radio" name="gameMode" value="retakes"><span>Retakes</span></label>
+                    <label><input type="radio" name="gameMode" value="executes"><span>Executes</span></label>
+                  </div>
+                  <div id="gameModesRow2" class="segmented">
+                    <label><input type="radio" name="gameMode" value="gungame"><span>Gun Game</span></label>
+                    <label><input type="radio" name="gameMode" value="kz"><span>KZ</span></label>
+                    <label><input type="radio" name="gameMode" value="bhop"><span>Bhop</span></label>
+                  </div>
+                </div>
+
+                <hr class="card-divider">
+
+                <h2>Match Format</h2>
+                <div id="formats" class="segmented">
+                  <label><input type="radio" name="mode" value="bo1"><span>BO1</span></label>
+                  <label><input type="radio" name="mode" value="bo3"><span>BO3</span></label>
+                  <label><input type="radio" name="mode" value="bo5"><span>BO5</span></label>
+                </div>
+                <p class="hint">Sets round count / overtime. Map veto &amp; series scoring needs a match plugin (e.g. MatchZy) which isn't installed.</p>
+
+                <hr class="card-divider">
+
+                <h2>Team Size</h2>
+                <div id="teamSizes" class="segmented">
+                  <label><input type="radio" name="teamSize" value="1"><span>1v1</span></label>
+                  <label><input type="radio" name="teamSize" value="2"><span>2v2</span></label>
+                  <label><input type="radio" name="teamSize" value="3"><span>3v3</span></label>
+                  <label><input type="radio" name="teamSize" value="4"><span>4v4</span></label>
+                  <label><input type="radio" name="teamSize" value="5"><span>5v5</span></label>
+                </div>
+
+                <hr class="card-divider">
+
+                <h2>Mods</h2>
+                <div id="mods" class="toggle-list"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card maps-card">
+            <h2>Maps</h2>
+            <nav class="subtabs">
+              <button class="subtab-btn active" data-maptab="core">Core Map Pool</button>
+              <button class="subtab-btn" data-maptab="extra">Extra Maps</button>
+              <button class="subtab-btn" data-maptab="workshop">Workshop Maps</button>
+            </nav>
+            <div class="subtab-panel" data-mappanel="core">
+              <div id="mapsCore" class="map-grid"></div>
+            </div>
+            <div class="subtab-panel" data-mappanel="extra" hidden>
+              <div id="mapsExtra" class="map-grid"></div>
+            </div>
+            <div class="subtab-panel" data-mappanel="workshop" hidden>
+              <div class="preset-row">
+                <input id="workshopInput" type="text" placeholder="Workshop ID or link...">
+                <button id="workshopAddBtn" class="btn btn-primary">Download</button>
+                <span id="workshopMsg" class="msg"></span>
+              </div>
+              <div id="mapsWorkshop" class="map-grid"></div>
+            </div>
+            <div class="card-actions">
+              <button id="mapBtn" class="btn btn-primary" disabled title="Can only change the map when the server is running.">Change Map</button>
+              <span id="mapMsg" class="msg"></span>
+            </div>
+          </section>
+        </div>
+
+        <div class="settings-extra">
+          <section class="card console-card">
+            <h2>Console</h2>
+            <div id="console" class="log-view"></div>
+            <form id="rconForm" class="rcon-row">
+              <input id="rconInput" type="text" placeholder="Enter a command..." autocomplete="off" disabled>
+              <button id="rconSend" type="submit" class="btn btn-primary" disabled>Send</button>
+            </form>
+          </section>
+
+          <div class="settings-extra-row">
+            <section class="card">
+              <h2>Log File</h2>
+              <div id="logs" class="log-view log-view-small"></div>
+            </section>
+
+            <section class="card usage-card">
+              <div class="card-header-row">
+                <h2>Usage</h2>
+                <div class="segmented-ghost">
+                  <button type="button" class="active" disabled>CPU</button>
+                  <button type="button" disabled>RAM</button>
+                  <button type="button" disabled>Storage</button>
+                </div>
+              </div>
+              <div class="usage-placeholder">
+                <span>Usage metrics coming soon</span>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="config" hidden>
+        <section class="card config-card">
+          <div class="card-header-row">
+            <h2>Config</h2>
+            <select id="configFileSelect" class="config-file-select"></select>
+          </div>
+          <textarea id="configEditor" class="config-editor" spellcheck="false"></textarea>
+          <div class="card-actions">
+            <button id="configSaveBtn" class="btn btn-primary">Save Config</button>
+            <span id="configMsg" class="msg"></span>
+          </div>
+
+          <hr class="card-divider">
+
+          <h2>Saved Alternatives</h2>
+          <div class="preset-row">
+            <input id="presetName" type="text" placeholder="Preset name...">
+            <button id="presetSaveBtn" class="btn btn-primary">Save As Alternative</button>
+          </div>
+          <div id="presetList" class="preset-list"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

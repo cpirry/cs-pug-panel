@@ -437,6 +437,32 @@ body {
   color: var(--text-dim);
 }
 
+.landing-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.landing-card {
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 40px 48px;
+  max-width: 360px;
+}
+
+.landing-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.landing-subtitle {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
 .card-header-row {
   display: flex;
   align-items: center;

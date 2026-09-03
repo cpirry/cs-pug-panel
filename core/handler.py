@@ -63,6 +63,7 @@ from .steam_auth import (
     destroy_session,
     fetch_player_summaries,
     fetch_player_summary,
+    is_allowed,
     session_steam_id,
     verify_callback,
 )
@@ -125,6 +126,13 @@ class Handler(BaseHTTPRequestHandler):
             return f"{SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
         return f"{SESSION_COOKIE}={token}; Path=/; Max-Age={SESSION_MAX_AGE}; HttpOnly; SameSite=Lax"
 
+    def _require_login(self):
+        steam_id = session_steam_id(self._session_token())
+        if not steam_id:
+            self._send_json({"error": "not logged in"}, 401)
+            return None
+        return steam_id
+
     def _auth_info(self, steam_id):
         if not steam_id:
             return {"loggedIn": False}
@@ -161,8 +169,26 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/":
+            if session_steam_id(self._session_token()):
+                self.send_response(302)
+                self.send_header("Location", "/app.html")
+                self.end_headers()
+                return
+            self._send_static("/")
+            return
+        if parsed.path == "/app.html":
+            if not session_steam_id(self._session_token()):
+                self.send_response(302)
+                self.send_header("Location", "/")
+                self.end_headers()
+                return
+            self._send_static(parsed.path)
+            return
         if parsed.path == "/api/state":
-            steam_id = session_steam_id(self._session_token())
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
             state = build_state()
             state["auth"] = self._auth_info(steam_id)
             state["lobby"] = self._lobby_info(steam_id)
@@ -178,14 +204,20 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/auth/steam/callback":
             params = {k: v[0] for k, v in parse_qs(parsed.query).items() if k.startswith("openid.")}
             steam_id = verify_callback(params)
+            if steam_id and not is_allowed(steam_id):
+                steam_id = None
             self.send_response(302)
-            self.send_header("Location", "/")
             if steam_id:
+                self.send_header("Location", "/app.html")
                 token = create_session(steam_id)
                 self.send_header("Set-Cookie", self._session_cookie_header(token=token))
+            else:
+                self.send_header("Location", "/")
             self.end_headers()
             return
         if parsed.path == "/api/tail":
+            if self._require_login() is None:
+                return
             qs = parse_qs(parsed.query)
             n = int(qs.get("n", ["200"])[0])
             status = container_status()
@@ -211,6 +243,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send_static(parsed.path[len("/map-images/") :], MAP_IMAGES_DIR)
             return
         if parsed.path == "/api/config":
+            if self._require_login() is None:
+                return
             qs = parse_qs(parsed.query)
             file = resolve_gamemode_cfg(qs.get("file", [""])[0])
             if file is None:
@@ -226,6 +260,8 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         if parsed.path.startswith("/api/config/presets/"):
+            if self._require_login() is None:
+                return
             rest = unquote(parsed.path[len("/api/config/presets/") :])
             file, _, name = rest.partition("/")
             if not GAMEMODE_CFG_RE.match(file) or file not in list_gamemode_configs():
@@ -248,6 +284,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/settings":
+            if self._require_login() is None:
+                return
             updates = {}
             if "serverName" in body:
                 updates["CS2_SERVERNAME"] = body["serverName"]
@@ -301,6 +339,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/rcon":
+            if self._require_login() is None:
+                return
             command = body.get("command", "").strip()
             if not command:
                 self._send_json({"error": "no command given"}, 400)
@@ -313,6 +353,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/config":
+            if self._require_login() is None:
+                return
             file = body.get("file", "")
             content = body.get("content", "")
             if not GAMEMODE_CFG_RE.match(file) or file not in list_gamemode_configs():
@@ -331,6 +373,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/config/presets":
+            if self._require_login() is None:
+                return
             file = body.get("file", "")
             name = body.get("name", "")
             content = body.get("content", "")
@@ -346,6 +390,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/config/presets/delete":
+            if self._require_login() is None:
+                return
             file = body.get("file", "")
             if not GAMEMODE_CFG_RE.match(file) or file not in list_gamemode_configs():
                 self._send_json({"error": "invalid config file"}, 400)
@@ -355,6 +401,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/mods/toggle":
+            if self._require_login() is None:
+                return
             name = body.get("name", "")
             try:
                 enabled = toggle_mod(name)
@@ -365,6 +413,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/workshop/add":
+            if self._require_login() is None:
+                return
             workshop_id = parse_workshop_id(body.get("input", ""))
             if not workshop_id:
                 self._send_json({"error": "couldn't find a workshop ID in that input"}, 400)
@@ -385,6 +435,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/launch":
+            if self._require_login() is None:
+                return
             code, out, err = run(
                 [
                     "docker",
@@ -407,6 +459,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/stop":
+            if self._require_login() is None:
+                return
             code, out, err = run(["docker", "stop", CONTAINER], timeout=30)
             self._send_json({"ok": code == 0, "output": out + err})
             return
@@ -417,18 +471,16 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/lobby/create":
-            steam_id = session_steam_id(self._session_token())
-            if not steam_id:
-                self._send_json({"error": "not logged in"}, 401)
+            steam_id = self._require_login()
+            if steam_id is None:
                 return
             code = create_lobby(steam_id)
             self._send_json({"ok": True, "code": code})
             return
 
         if parsed.path == "/api/lobby/join":
-            steam_id = session_steam_id(self._session_token())
-            if not steam_id:
-                self._send_json({"error": "not logged in"}, 401)
+            steam_id = self._require_login()
+            if steam_id is None:
                 return
             code = join_lobby(body.get("code", ""), steam_id)
             if code is None:
@@ -445,9 +497,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/lobby/start":
-            steam_id = session_steam_id(self._session_token())
-            if not steam_id:
-                self._send_json({"error": "not logged in"}, 401)
+            steam_id = self._require_login()
+            if steam_id is None:
                 return
             code, lobby = find_lobby_for(steam_id)
             if lobby is None:
@@ -496,9 +547,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/lobby/reset":
-            steam_id = session_steam_id(self._session_token())
-            if not steam_id:
-                self._send_json({"error": "not logged in"}, 401)
+            steam_id = self._require_login()
+            if steam_id is None:
                 return
             code, lobby = find_lobby_for(steam_id)
             if lobby is None:
