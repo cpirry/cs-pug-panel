@@ -1,4 +1,4 @@
-# cs-sever-panel
+# cs-server-panel
 
 A web based UI for managing a CS2 server, complete with:
 
