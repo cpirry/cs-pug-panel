@@ -43,8 +43,17 @@ export function updateLaunchButtonLabel(running, matchTime) {
   launchBtn.textContent = running ? `Live for: ${formatDuration(matchTime)}` : launchBtnIdleLabel;
 }
 
+function redirectIfUnauthorized(res) {
+  if (res.status === 401) {
+    window.location.href = "/";
+    return true;
+  }
+  return false;
+}
+
 export async function loadState() {
   const res = await fetch("/api/state");
+  if (redirectIfUnauthorized(res)) return;
   const state = await res.json();
   setStatus(state.running, state.status);
   renderAuth(state.auth);
@@ -74,12 +83,14 @@ export async function loadState() {
 
 export async function refreshMaps() {
   const res = await fetch("/api/state");
+  if (redirectIfUnauthorized(res)) return;
   const state = await res.json();
   renderMaps(state.maps, state.selectedMap);
 }
 
 export async function pollTail() {
   const res = await fetch("/api/tail?n=200");
+  if (redirectIfUnauthorized(res)) return;
   const data = await res.json();
   setStatus(data.running, data.status);
   setLatestTail(data.console);

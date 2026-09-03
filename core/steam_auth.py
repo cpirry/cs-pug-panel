@@ -9,6 +9,8 @@ from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from .constants import STEAM_ALLOWLIST
+
 STEAM_OPENID_URL = "https://steamcommunity.com/openid/login"
 STEAM_ID_PREFIX = "https://steamcommunity.com/openid/id/"
 STEAM_API_KEY = os.environ.get("STEAM_API_KEY", "")
@@ -53,6 +55,10 @@ def verify_callback(params):
     if "is_valid:true" not in result:
         return None
     return steam_id
+
+
+def is_allowed(steam_id):
+    return steam_id in STEAM_ALLOWLIST
 
 
 def create_session(steam_id):

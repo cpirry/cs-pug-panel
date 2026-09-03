@@ -16,6 +16,10 @@ RCON_PORT = int(os.environ.get("CS2_RCON_PORT", "27015"))
 # Not auto-detectable from inside the container - must be set explicitly.
 CS2_CONNECT_HOST = os.environ.get("CS2_CONNECT_HOST", "")
 
+# SteamID64s allowed to log in. Empty by default (fail-secure: nobody can log in
+# until this is set) - configure via the STEAM_ALLOWLIST env var, comma-separated.
+STEAM_ALLOWLIST = {s.strip() for s in os.environ.get("STEAM_ALLOWLIST", "").split(",") if s.strip()}
+
 ENV_PATH = os.path.join(COMPOSE_DIR, ".env")
 COMPOSE_FILE = os.path.join(COMPOSE_DIR, "docker-compose.yml")
 MAPS_DIR = os.path.join(GAME_DIR, "maps")
