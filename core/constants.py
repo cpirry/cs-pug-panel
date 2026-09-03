@@ -12,6 +12,9 @@ PROJECT_NAME = os.environ.get("COMPOSE_PROJECT_NAME", "cs2server")
 PORT = int(os.environ.get("PORT", "8080"))
 RCON_HOST = os.environ.get("CS2_HOST", "cs2_server")
 RCON_PORT = int(os.environ.get("CS2_RCON_PORT", "27015"))
+# The externally-reachable host/IP players connect to (for steam://connect/ links).
+# Not auto-detectable from inside the container - must be set explicitly.
+CS2_CONNECT_HOST = os.environ.get("CS2_CONNECT_HOST", "")
 
 ENV_PATH = os.path.join(COMPOSE_DIR, ".env")
 COMPOSE_FILE = os.path.join(COMPOSE_DIR, "docker-compose.yml")

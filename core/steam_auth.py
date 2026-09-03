@@ -74,19 +74,25 @@ def destroy_session(token):
         _sessions.pop(token, None)
 
 
-def fetch_player_summary(steam_id):
-    """Returns {personaName, avatar} for steam_id, or None if no API key is configured or the lookup fails."""
-    if not STEAM_API_KEY:
-        return None
-    params = {"key": STEAM_API_KEY, "steamids": steam_id}
+def fetch_player_summaries(steam_ids):
+    """Returns {steam_id: {personaName, avatar}} for the given steam_ids. Missing/failed lookups are simply absent."""
+    steam_ids = [s for s in dict.fromkeys(steam_ids) if s]
+    if not STEAM_API_KEY or not steam_ids:
+        return {}
+    params = {"key": STEAM_API_KEY, "steamids": ",".join(steam_ids)}
     url = f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?{urlencode(params)}"
     try:
         with urlopen(url, timeout=10) as resp:
             payload = json.loads(resp.read())
     except (URLError, OSError, TimeoutError, json.JSONDecodeError):
-        return None
+        return {}
     players = payload.get("response", {}).get("players", [])
-    if not players:
-        return None
-    p = players[0]
-    return {"personaName": p.get("personaname", steam_id), "avatar": p.get("avatar", "")}
+    return {
+        p["steamid"]: {"personaName": p.get("personaname", p["steamid"]), "avatar": p.get("avatar", "")}
+        for p in players
+    }
+
+
+def fetch_player_summary(steam_id):
+    """Returns {personaName, avatar} for steam_id, or None if no API key is configured or the lookup fails."""
+    return fetch_player_summaries([steam_id]).get(steam_id)

@@ -18,6 +18,7 @@ from .constants import (
     COMPOSE_FILE,
     CONTAINER,
     CS2_APP_ID,
+    CS2_CONNECT_HOST,
     ENV_PATH,
     GAME_MODE_MODS,
     GAMEMODE_CFG_RE,
@@ -27,7 +28,7 @@ from .constants import (
     SERVICE,
     STATIC_DIR,
 )
-from .envfile import write_env
+from .envfile import read_env, write_env
 from .gamemode_cfg import (
     delete_preset,
     list_gamemode_configs,
@@ -39,6 +40,15 @@ from .gamemode_cfg import (
     write_gamemode_cfg,
 )
 from .idle import mark_activity
+from .lobby import (
+    create_lobby,
+    find_lobby_for,
+    generate_match_password,
+    join_lobby,
+    leave_lobby,
+    reset_lobby,
+    start_lobby,
+)
 from .maps import fetch_workshop_details, parse_workshop_id, save_workshop_map
 from .match_state import _reset_match_state, list_players, match_elapsed_seconds
 from .mods import toggle_mod, write_game_mode
@@ -51,6 +61,7 @@ from .steam_auth import (
     build_login_url,
     create_session,
     destroy_session,
+    fetch_player_summaries,
     fetch_player_summary,
     session_steam_id,
     verify_callback,
@@ -114,8 +125,7 @@ class Handler(BaseHTTPRequestHandler):
             return f"{SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
         return f"{SESSION_COOKIE}={token}; Path=/; Max-Age={SESSION_MAX_AGE}; HttpOnly; SameSite=Lax"
 
-    def _auth_info(self):
-        steam_id = session_steam_id(self._session_token())
+    def _auth_info(self, steam_id):
         if not steam_id:
             return {"loggedIn": False}
         summary = fetch_player_summary(steam_id) or {}
@@ -126,11 +136,36 @@ class Handler(BaseHTTPRequestHandler):
             "avatar": summary.get("avatar", ""),
         }
 
+    def _lobby_info(self, steam_id):
+        if not steam_id:
+            return None
+        code, lobby = find_lobby_for(steam_id)
+        if lobby is None:
+            return None
+        summaries = fetch_player_summaries(lobby["members"])
+        members = [
+            {
+                "steamId": member_id,
+                "displayName": summaries.get(member_id, {}).get("personaName", member_id),
+                "avatar": summaries.get(member_id, {}).get("avatar", ""),
+            }
+            for member_id in lobby["members"]
+        ]
+        return {
+            "code": code,
+            "host": lobby["host"],
+            "members": members,
+            "state": lobby["state"],
+            "connect": lobby.get("connect"),
+        }
+
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/api/state":
+            steam_id = session_steam_id(self._session_token())
             state = build_state()
-            state["auth"] = self._auth_info()
+            state["auth"] = self._auth_info(steam_id)
+            state["lobby"] = self._lobby_info(steam_id)
             self._send_json(state)
             return
         if parsed.path == "/auth/steam/login":
@@ -379,6 +414,101 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/api/auth/logout":
             destroy_session(self._session_token())
             self._send_json({"ok": True}, headers={"Set-Cookie": self._session_cookie_header(clear=True)})
+            return
+
+        if parsed.path == "/api/lobby/create":
+            steam_id = session_steam_id(self._session_token())
+            if not steam_id:
+                self._send_json({"error": "not logged in"}, 401)
+                return
+            code = create_lobby(steam_id)
+            self._send_json({"ok": True, "code": code})
+            return
+
+        if parsed.path == "/api/lobby/join":
+            steam_id = session_steam_id(self._session_token())
+            if not steam_id:
+                self._send_json({"error": "not logged in"}, 401)
+                return
+            code = join_lobby(body.get("code", ""), steam_id)
+            if code is None:
+                self._send_json({"error": "lobby not found"}, 404)
+                return
+            self._send_json({"ok": True, "code": code})
+            return
+
+        if parsed.path == "/api/lobby/leave":
+            steam_id = session_steam_id(self._session_token())
+            if steam_id:
+                leave_lobby(steam_id)
+            self._send_json({"ok": True})
+            return
+
+        if parsed.path == "/api/lobby/start":
+            steam_id = session_steam_id(self._session_token())
+            if not steam_id:
+                self._send_json({"error": "not logged in"}, 401)
+                return
+            code, lobby = find_lobby_for(steam_id)
+            if lobby is None:
+                self._send_json({"error": "not in a lobby"}, 400)
+                return
+            if lobby["host"] != steam_id:
+                self._send_json({"error": "only the lobby host can start the match"}, 403)
+                return
+
+            password = generate_match_password()
+            write_env({"CS2_PW": password})
+            if container_status() == "running":
+                try:
+                    rcon_command(f'sv_password "{password}"')
+                except (RconError, OSError):
+                    pass
+            else:
+                run(
+                    [
+                        "docker",
+                        "compose",
+                        "-p",
+                        PROJECT_NAME,
+                        "-f",
+                        COMPOSE_FILE,
+                        "--env-file",
+                        ENV_PATH,
+                        "up",
+                        "-d",
+                        "--force-recreate",
+                        SERVICE,
+                    ],
+                    timeout=60,
+                )
+                mark_activity()
+
+            port = read_env().get("CS2_PORT", "27015")
+            connect = {
+                "host": CS2_CONNECT_HOST,
+                "port": port,
+                "password": password,
+                "steamUrl": f"steam://connect/{CS2_CONNECT_HOST}:{port}/{password}" if CS2_CONNECT_HOST else None,
+            }
+            start_lobby(code, steam_id, connect)
+            self._send_json({"ok": True, "connect": connect})
+            return
+
+        if parsed.path == "/api/lobby/reset":
+            steam_id = session_steam_id(self._session_token())
+            if not steam_id:
+                self._send_json({"error": "not logged in"}, 401)
+                return
+            code, lobby = find_lobby_for(steam_id)
+            if lobby is None:
+                self._send_json({"error": "not in a lobby"}, 400)
+                return
+            if lobby["host"] != steam_id:
+                self._send_json({"error": "only the lobby host can reset the lobby"}, 403)
+                return
+            reset_lobby(code, steam_id)
+            self._send_json({"ok": True})
             return
 
         self._send_json({"error": "not found"}, 404)
