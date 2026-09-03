@@ -28,6 +28,7 @@ import {
   configMsg,
   presetName,
   presetSaveBtn,
+  steamLogoutBtn,
 } from "./dom.js";
 import { selectedMap, selectedMapSource } from "./maps.js";
 import {
@@ -41,6 +42,11 @@ import {
 import { pushRconHistory, renderConsole } from "./console.js";
 import { loadConfig, renderPresets } from "./config.js";
 import { loadState, refreshMaps, pollTail } from "./state.js";
+
+steamLogoutBtn.addEventListener("click", async () => {
+  await fetch("/api/auth/logout", { method: "POST" });
+  await loadState();
+});
 
 wirePasswordToggle(rconPasswordInput, rconPasswordToggle);
 wirePasswordToggle(serverPasswordInput, serverPasswordToggle);
