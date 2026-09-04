@@ -7,19 +7,11 @@ import {
   workshopInput,
   workshopAddBtn,
   workshopMsg,
-  launchBtn,
-  stopBtn,
   rconForm,
   rconInput,
   rconSend,
   consoleEl,
   logsEl,
-  maxPlayersInput,
-  serverNameInput,
-  serverPasswordInput,
-  rconPasswordInput,
-  rconPasswordToggle,
-  serverPasswordToggle,
   ctTeamNameInput,
   tTeamNameInput,
   configFileSelect,
@@ -29,25 +21,27 @@ import {
   presetName,
   presetSaveBtn,
   steamLogoutBtn,
-  lobbyCreateBtn,
-  lobbyJoinInput,
-  lobbyJoinBtn,
-  lobbyLeaveBtn,
+  lobbyMsg,
   lobbyStartBtn,
   lobbyResetBtn,
+  rosterTEl,
+  rosterCtEl,
+  lobbyCode,
+  lobbyCodeCopyBtn,
+  invitePlayerBtn,
+  invitePlayerModal,
+  invitePlayerLink,
+  invitePlayerCopyBtn,
+  invitePlayerCloseBtn,
+  invitePlayerMsg,
 } from "./dom.js";
 import { selectedMap, selectedMapSource } from "./maps.js";
-import {
-  wirePasswordToggle,
-  selectedMode,
-  selectedGameMode,
-  teamSizeToMax,
-  selectedTeamSize,
-  applyGameModeLock,
-} from "./settings.js";
+import { selectedMode, selectedGameMode, teamSizeToMax, selectedTeamSize } from "./settings.js";
+import { renderRoster } from "./roster.js";
+import { wireSubtabs } from "./subtabs.js";
 import { pushRconHistory, renderConsole } from "./console.js";
 import { loadConfig, renderPresets } from "./config.js";
-import { createLobby, joinLobby, leaveLobby, startMatch, resetLobby } from "./lobby.js";
+import { toggleReady, startMatch, resetLobby, moveMember, buildLobbyLink } from "./lobby.js";
 import { loadState, refreshMaps, pollTail } from "./state.js";
 
 steamLogoutBtn.addEventListener("click", async () => {
@@ -55,48 +49,124 @@ steamLogoutBtn.addEventListener("click", async () => {
   await loadState();
 });
 
-lobbyCreateBtn.addEventListener("click", async () => {
-  lobbyCreateBtn.disabled = true;
-  await createLobby();
-  await loadState();
-  lobbyCreateBtn.disabled = false;
-});
-
-lobbyJoinBtn.addEventListener("click", async () => {
-  const code = lobbyJoinInput.value.trim();
-  if (!code) return;
-  lobbyJoinBtn.disabled = true;
-  const ok = await joinLobby(code);
-  if (ok) lobbyJoinInput.value = "";
-  await loadState();
-  lobbyJoinBtn.disabled = false;
-});
-
-lobbyLeaveBtn.addEventListener("click", async () => {
-  lobbyLeaveBtn.disabled = true;
-  await leaveLobby();
-  await loadState();
-  lobbyLeaveBtn.disabled = false;
-});
+function pushSettings(extra = {}) {
+  return fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      maxPlayers: teamSizeToMax(selectedTeamSize()),
+      mode: selectedMode(),
+      gameMode: selectedGameMode(),
+      ctTeamName: ctTeamNameInput.value,
+      tTeamName: tTeamNameInput.value,
+      ...extra,
+    }),
+  });
+}
 
 lobbyStartBtn.addEventListener("click", async () => {
   lobbyStartBtn.disabled = true;
   lobbyStartBtn.textContent = "Starting...";
-  await startMatch();
+  await pushSettings({ map: selectedMap() });
+  const data = await startMatch();
+  lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
   await loadState();
-  lobbyStartBtn.textContent = "Start Match";
-  lobbyStartBtn.disabled = false;
 });
 
 lobbyResetBtn.addEventListener("click", async () => {
   lobbyResetBtn.disabled = true;
-  await resetLobby();
+  const data = await resetLobby();
+  lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
   await loadState();
   lobbyResetBtn.disabled = false;
 });
 
-wirePasswordToggle(rconPasswordInput, rconPasswordToggle);
-wirePasswordToggle(serverPasswordInput, serverPasswordToggle);
+[rosterTEl, rosterCtEl].forEach((container) => {
+  container.addEventListener("change", async (e) => {
+    if (!e.target.classList.contains("roster-ready-checkbox")) return;
+    e.target.disabled = true;
+    const data = await toggleReady();
+    lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
+    await loadState();
+  });
+
+  container.addEventListener("dragstart", (e) => {
+    const slot = e.target.closest(".roster-slot-draggable");
+    if (!slot) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", slot.dataset.steamId);
+  });
+
+  container.addEventListener("dragover", (e) => {
+    if (!e.dataTransfer.types.includes("text/plain")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const slot = e.target.closest(".roster-slot");
+    if (slot) slot.classList.add("drag-over");
+  });
+
+  container.addEventListener("dragleave", (e) => {
+    const slot = e.target.closest(".roster-slot");
+    if (slot) slot.classList.remove("drag-over");
+  });
+
+  container.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    const slot = e.target.closest(".roster-slot");
+    if (slot) slot.classList.remove("drag-over");
+    const draggedId = e.dataTransfer.getData("text/plain");
+    if (!draggedId || !slot) return;
+    const targetId = slot.dataset.steamId;
+    if (targetId === draggedId) return;
+    const data = await moveMember(draggedId, container.dataset.team, targetId || undefined);
+    lobbyMsg.textContent = data.ok ? "" : data.error || "Couldn't move that player";
+    await loadState();
+  });
+});
+
+lobbyCodeCopyBtn.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(lobbyCode.textContent);
+    lobbyCodeCopyBtn.classList.add("is-copied");
+    setTimeout(() => lobbyCodeCopyBtn.classList.remove("is-copied"), 1200);
+  } catch {
+    // clipboard unavailable - nothing else to surface for an icon-only button
+  }
+});
+
+function closeInvitePlayerModal() {
+  invitePlayerModal.hidden = true;
+}
+
+invitePlayerBtn.addEventListener("click", () => {
+  invitePlayerLink.value = buildLobbyLink(lobbyCode.textContent);
+  invitePlayerMsg.textContent = "";
+  invitePlayerModal.hidden = false;
+});
+
+invitePlayerCloseBtn.addEventListener("click", closeInvitePlayerModal);
+
+invitePlayerModal.addEventListener("click", (e) => {
+  if (e.target === invitePlayerModal) closeInvitePlayerModal();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !invitePlayerModal.hidden) closeInvitePlayerModal();
+});
+
+invitePlayerCopyBtn.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(invitePlayerLink.value);
+    invitePlayerMsg.textContent = "Copied!";
+    invitePlayerMsg.className = "msg ok";
+  } catch {
+    invitePlayerMsg.textContent = "Couldn't copy automatically";
+    invitePlayerMsg.className = "msg err";
+  }
+});
 
 mapBtn.addEventListener("click", async () => {
   mapBtn.disabled = true;
@@ -137,36 +207,6 @@ workshopAddBtn.addEventListener("click", async () => {
   workshopAddBtn.disabled = false;
 });
 
-launchBtn.addEventListener("click", async () => {
-  launchBtn.disabled = true;
-  launchBtn.textContent = "Starting...";
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      serverName: serverNameInput.value,
-      password: serverPasswordInput.value,
-      rconPassword: rconPasswordInput.value,
-      maxPlayers: teamSizeToMax(selectedTeamSize()),
-      mode: selectedMode(),
-      gameMode: selectedGameMode(),
-      map: selectedMap(),
-      ctTeamName: ctTeamNameInput.value,
-      tTeamName: tTeamNameInput.value,
-    }),
-  });
-  await fetch("/api/launch", { method: "POST" });
-  await loadState();
-});
-
-stopBtn.addEventListener("click", async () => {
-  stopBtn.disabled = true;
-  stopBtn.textContent = "Stopping...";
-  await fetch("/api/stop", { method: "POST" });
-  stopBtn.textContent = "Stop Server";
-  await loadState();
-});
-
 rconForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const command = rconInput.value.trim();
@@ -191,39 +231,39 @@ rconForm.addEventListener("submit", async (e) => {
   rconInput.focus();
 });
 
-document.querySelectorAll(".tab-btn").forEach((btn) => {
+document.querySelectorAll(".side-nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".side-nav-btn").forEach((b) => b.classList.remove("active"));
     document.querySelectorAll(".tab-panel").forEach((p) => (p.hidden = true));
     btn.classList.add("active");
     document.querySelector(`.tab-panel[data-panel="${btn.dataset.tab}"]`).hidden = false;
-    if (btn.dataset.tab === "settings") {
+    if (btn.dataset.tab === "logs") {
       consoleEl.scrollTop = consoleEl.scrollHeight;
       logsEl.scrollTop = logsEl.scrollHeight;
     }
   });
 });
 
-document.querySelectorAll(".subtab-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".subtab-btn").forEach((b) => b.classList.remove("active"));
-    document.querySelectorAll(".subtab-panel").forEach((p) => (p.hidden = true));
-    btn.classList.add("active");
-    document.querySelector(`.subtab-panel[data-mappanel="${btn.dataset.maptab}"]`).hidden = false;
-  });
-});
+wireSubtabs();
 
 document.querySelectorAll('input[name=teamSize]').forEach((input) => {
   input.addEventListener("change", () => {
-    maxPlayersInput.value = teamSizeToMax(selectedTeamSize());
+    renderRoster(selectedTeamSize());
+    pushSettings();
   });
 });
 
-document.querySelectorAll('input[name=gameMode]').forEach((input) => {
-  input.addEventListener("change", applyGameModeLock);
+document.querySelectorAll('input[name=mode]').forEach((input) => {
+  input.addEventListener("change", () => {
+    pushSettings();
+  });
 });
 
-applyGameModeLock();
+[ctTeamNameInput, tTeamNameInput].forEach((input) => {
+  input.addEventListener("change", () => {
+    pushSettings();
+  });
+});
 
 configFileSelect.addEventListener("change", () => {
   loadConfig(configFileSelect.value);

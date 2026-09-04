@@ -2,6 +2,7 @@
 // Purpose: Renders map tiles and reads the currently selected map.
 
 import { mapsCoreEl, mapsExtraEl, mapsWorkshopEl } from "./dom.js";
+import { activateSubtab } from "./subtabs.js";
 
 export function renderMapList(container, maps, selected) {
   container.innerHTML = "";
@@ -109,12 +110,7 @@ export function activateMapTabFor(selected, maps) {
   let target = "core";
   if (maps.extra.includes(selected)) target = "extra";
   else if (maps.workshop.some((m) => m.id === selected)) target = "workshop";
-  document.querySelectorAll(".subtab-btn").forEach((b) => {
-    b.classList.toggle("active", b.dataset.maptab === target);
-  });
-  document.querySelectorAll(".subtab-panel").forEach((p) => {
-    p.hidden = p.dataset.mappanel !== target;
-  });
+  activateSubtab(mapsCoreEl.closest(".subtab-group"), target);
 }
 
 export function selectedMap() {
