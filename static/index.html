@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>CS2 Server Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -12,17 +15,53 @@
         <span class="brand-icon">&gt;_</span>
         <span class="brand-name">CS2 Panel</span>
       </div>
+      <div class="steam-auth">
+        <a href="/auth/steam/login" id="steamLoginLink" class="steam-login-btn">
+          <img src="https://community.akamai.steamstatic.com/public/images/signinthroughsteam/sits_small.png" alt="Sign in through Steam">
+        </a>
+        <div class="steam-account" id="steamAccount" hidden>
+          <img id="steamAvatar" class="steam-avatar" alt="" hidden>
+          <span id="steamName"></span>
+          <button type="button" id="steamLogoutBtn" class="steam-logout-btn">Log Out</button>
+        </div>
+      </div>
     </header>
 
     <div class="landing-wrap">
-      <section class="card landing-card">
+      <section class="card landing-card" id="loginCard">
         <h1 class="landing-title">Sign in to continue</h1>
         <p class="landing-subtitle">You need to sign in with Steam to manage the server.</p>
         <a href="/auth/steam/login" class="steam-login-btn">
           <img src="https://community.akamai.steamstatic.com/public/images/signinthroughsteam/sits_small.png" alt="Sign in through Steam">
         </a>
       </section>
+
+      <section class="card landing-card" id="lobbyEntryCard" hidden>
+        <img id="landingAvatar" class="landing-avatar" alt="" hidden>
+        <div class="landing-name" id="landingName"></div>
+        <button type="button" id="hostBtn" class="btn btn-primary">Host a Lobby</button>
+        <div class="landing-join-row">
+          <input type="text" id="joinCodeInput" placeholder="Enter code...">
+          <button type="button" id="joinBtn" class="btn btn-primary">Join</button>
+        </div>
+        <span class="msg" id="joinMsg"></span>
+      </section>
+    </div>
+
+    <div class="modal-overlay" id="lobbyModal" hidden>
+      <div class="card modal-box">
+        <h2>Lobby Created</h2>
+        <p class="hint">Share this code or link so others can join your lobby.</p>
+        <div class="lobby-modal-code" id="lobbyModalCode"></div>
+        <div class="modal-actions">
+          <button type="button" id="lobbyModalCopyBtn" class="btn btn-primary">Copy Invite Link</button>
+          <button type="button" id="lobbyModalContinueBtn" class="btn btn-primary">Continue to Lobby</button>
+        </div>
+        <span class="msg" id="lobbyModalMsg"></span>
+      </div>
     </div>
   </div>
+
+  <script type="module" src="/js/landing.js"></script>
 </body>
 </html>

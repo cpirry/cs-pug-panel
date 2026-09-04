@@ -1,50 +1,35 @@
 // lobby.js
-// Purpose: Renders the lobby create/join/members bar and its create/join/leave actions.
+// Purpose: Renders lobby-level UI (code, ready/start/reset controls) and drives lobby actions.
 
 import {
-  lobbyActive,
-  lobbyBar,
   lobbyCode,
+  lobbyCodeCopyBtn,
   lobbyConnect,
   lobbyConnectLink,
   lobbyConnectText,
-  lobbyEmpty,
-  lobbyMembers,
-  lobbyMsg,
+  lobbyModal,
+  lobbyModalCode,
   lobbyResetBtn,
   lobbyStartBtn,
 } from "./dom.js";
 
 export function renderLobby(auth, lobby) {
   const loggedIn = !!(auth && auth.loggedIn);
-  lobbyBar.hidden = !loggedIn;
-  if (!loggedIn) return;
-
-  const inLobby = !!lobby;
-  lobbyEmpty.hidden = inLobby;
-  lobbyActive.hidden = !inLobby;
-  if (!inLobby) return;
+  const show = loggedIn && !!lobby;
+  lobbyCode.hidden = !show;
+  lobbyCodeCopyBtn.hidden = !show;
+  if (!show) return;
 
   lobbyCode.textContent = lobby.code;
-  lobbyMembers.innerHTML = "";
-  for (const member of lobby.members) {
-    const row = document.createElement("div");
-    row.className = "lobby-member";
-    if (member.avatar) {
-      const img = document.createElement("img");
-      img.className = "lobby-member-avatar";
-      img.alt = "";
-      img.src = member.avatar;
-      row.appendChild(img);
-    }
-    const name = document.createElement("span");
-    name.textContent = member.displayName + (member.steamId === lobby.host ? " (host)" : "");
-    row.appendChild(name);
-    lobbyMembers.appendChild(row);
-  }
 
   const isHost = lobby.host === auth.steamId;
+  const total = lobby.members.length;
+  const unready = lobby.members.filter((m) => !m.ready).length;
+
   lobbyStartBtn.hidden = !(isHost && lobby.state === "waiting");
+  lobbyStartBtn.disabled = unready > 0;
+  lobbyStartBtn.textContent =
+    unready > 0 ? `Waiting on ready players (${unready}/${total})` : "Start match";
   lobbyResetBtn.hidden = !(isHost && lobby.state === "in_match");
 
   const connect = lobby.connect;
@@ -57,16 +42,22 @@ export function renderLobby(auth, lobby) {
   }
 }
 
+export function showLobbyModal(code) {
+  lobbyModalCode.textContent = code;
+  lobbyModal.hidden = false;
+}
+
+export function buildLobbyLink(code) {
+  return `${window.location.origin}/?lobby=${code}`;
+}
+
 async function postLobbyAction(path, body) {
-  lobbyMsg.textContent = "";
   const res = await fetch(path, {
     method: "POST",
     headers: body ? { "Content-Type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json();
-  if (!data.ok) lobbyMsg.textContent = data.error || "Something went wrong";
-  return data.ok;
+  return res.json();
 }
 
 export function createLobby() {
@@ -77,8 +68,8 @@ export function joinLobby(code) {
   return postLobbyAction("/api/lobby/join", { code });
 }
 
-export function leaveLobby() {
-  return postLobbyAction("/api/lobby/leave");
+export function toggleReady() {
+  return postLobbyAction("/api/lobby/ready");
 }
 
 export function startMatch() {
@@ -87,4 +78,8 @@ export function startMatch() {
 
 export function resetLobby() {
   return postLobbyAction("/api/lobby/reset");
+}
+
+export function moveMember(steamId, team, swapWith) {
+  return postLobbyAction("/api/lobby/move", { steamId, team, swapWith });
 }

@@ -46,8 +46,10 @@ from .lobby import (
     generate_match_password,
     join_lobby,
     leave_lobby,
+    move_member,
     reset_lobby,
     start_lobby,
+    toggle_ready,
 )
 from .maps import fetch_workshop_details, parse_workshop_id, save_workshop_map
 from .match_state import _reset_match_state, list_players, match_elapsed_seconds
@@ -151,11 +153,15 @@ class Handler(BaseHTTPRequestHandler):
         if lobby is None:
             return None
         summaries = fetch_player_summaries(lobby["members"])
+        ready_set = lobby.get("ready", set())
+        teams = lobby.get("teams", {})
         members = [
             {
                 "steamId": member_id,
                 "displayName": summaries.get(member_id, {}).get("personaName", member_id),
                 "avatar": summaries.get(member_id, {}).get("avatar", ""),
+                "ready": member_id in ready_set,
+                "team": teams.get(member_id, "t"),
             }
             for member_id in lobby["members"]
         ]
@@ -165,20 +171,26 @@ class Handler(BaseHTTPRequestHandler):
             "members": members,
             "state": lobby["state"],
             "connect": lobby.get("connect"),
+            "allReady": bool(lobby["members"]) and len(ready_set) == len(lobby["members"]),
         }
 
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/":
-            if session_steam_id(self._session_token()):
-                self.send_response(302)
-                self.send_header("Location", "/app.html")
-                self.end_headers()
-                return
+            steam_id = session_steam_id(self._session_token())
+            if steam_id:
+                _, lobby = find_lobby_for(steam_id)
+                if lobby is not None:
+                    self.send_response(302)
+                    self.send_header("Location", "/app.html")
+                    self.end_headers()
+                    return
             self._send_static("/")
             return
         if parsed.path == "/app.html":
-            if not session_steam_id(self._session_token()):
+            steam_id = session_steam_id(self._session_token())
+            in_lobby = steam_id and find_lobby_for(steam_id)[1] is not None
+            if not in_lobby:
                 self.send_response(302)
                 self.send_header("Location", "/")
                 self.end_headers()
@@ -207,12 +219,10 @@ class Handler(BaseHTTPRequestHandler):
             if steam_id and not is_allowed(steam_id):
                 steam_id = None
             self.send_response(302)
+            self.send_header("Location", "/")
             if steam_id:
-                self.send_header("Location", "/app.html")
                 token = create_session(steam_id)
                 self.send_header("Set-Cookie", self._session_cookie_header(token=token))
-            else:
-                self.send_header("Location", "/")
             self.end_headers()
             return
         if parsed.path == "/api/tail":
@@ -507,6 +517,9 @@ class Handler(BaseHTTPRequestHandler):
             if lobby["host"] != steam_id:
                 self._send_json({"error": "only the lobby host can start the match"}, 403)
                 return
+            if not lobby["members"] or len(lobby["ready"]) != len(lobby["members"]):
+                self._send_json({"error": "not everyone is ready yet"}, 400)
+                return
 
             password = generate_match_password()
             write_env({"CS2_PW": password})
@@ -542,8 +555,8 @@ class Handler(BaseHTTPRequestHandler):
                 "password": password,
                 "steamUrl": f"steam://connect/{CS2_CONNECT_HOST}:{port}/{password}" if CS2_CONNECT_HOST else None,
             }
-            start_lobby(code, steam_id, connect)
-            self._send_json({"ok": True, "connect": connect})
+            started = start_lobby(code, steam_id, connect)
+            self._send_json({"ok": started, "connect": connect})
             return
 
         if parsed.path == "/api/lobby/reset":
@@ -558,6 +571,31 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({"error": "only the lobby host can reset the lobby"}, 403)
                 return
             reset_lobby(code, steam_id)
+            self._send_json({"ok": True})
+            return
+
+        if parsed.path == "/api/lobby/ready":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            code = toggle_ready(steam_id)
+            if code is None:
+                self._send_json({"error": "not in a lobby"}, 400)
+                return
+            self._send_json({"ok": True})
+            return
+
+        if parsed.path == "/api/lobby/move":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            target = body.get("steamId") or steam_id
+            team = body.get("team")
+            swap_with = body.get("swapWith") or None
+            moved = move_member(steam_id, target, team, swap_with)
+            if not moved:
+                self._send_json({"error": "couldn't move that player"}, 400)
+                return
             self._send_json({"ok": True})
             return
 
