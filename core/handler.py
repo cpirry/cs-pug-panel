@@ -45,6 +45,7 @@ from .lobby import (
     find_lobby_for,
     generate_match_password,
     join_lobby,
+    kick_member,
     leave_lobby,
     move_member,
     reset_lobby,
@@ -595,6 +596,17 @@ class Handler(BaseHTTPRequestHandler):
             moved = move_member(steam_id, target, team, swap_with)
             if not moved:
                 self._send_json({"error": "couldn't move that player"}, 400)
+                return
+            self._send_json({"ok": True})
+            return
+
+        if parsed.path == "/api/lobby/kick":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            target = body.get("steamId")
+            if not target or not kick_member(steam_id, target):
+                self._send_json({"error": "couldn't kick that player"}, 400)
                 return
             self._send_json({"ok": True})
             return

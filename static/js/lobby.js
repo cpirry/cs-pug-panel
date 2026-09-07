@@ -83,3 +83,7 @@ export function resetLobby() {
 export function moveMember(steamId, team, swapWith) {
   return postLobbyAction("/api/lobby/move", { steamId, team, swapWith });
 }
+
+export function kickMember(steamId) {
+  return postLobbyAction("/api/lobby/kick", { steamId });
+}

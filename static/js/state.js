@@ -38,6 +38,10 @@ export async function loadState() {
   const res = await fetch("/api/state");
   if (redirectIfUnauthorized(res)) return null;
   const state = await res.json();
+  if (!state.lobby) {
+    window.location.href = "/";
+    return null;
+  }
   setStatus(state.running);
   renderAuth(state.auth);
   renderLobby(state.auth, state.lobby);
@@ -45,8 +49,8 @@ export async function loadState() {
   renderMaps(state.maps, state.selectedMap);
   activateMapTabFor(state.selectedMap, state.maps);
   renderMods(state.mods);
-  ctTeamNameInput.value = state.settings.ctTeamName;
-  tTeamNameInput.value = state.settings.tTeamName;
+  if (document.activeElement !== ctTeamNameInput) ctTeamNameInput.value = state.settings.ctTeamName;
+  if (document.activeElement !== tTeamNameInput) tTeamNameInput.value = state.settings.tTeamName;
   const modeInput = document.querySelector(`input[name=mode][value="${state.mode}"]`);
   if (modeInput) modeInput.checked = true;
   const teamSize = maxToTeamSize(state.settings.maxPlayers);

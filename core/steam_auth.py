@@ -5,11 +5,12 @@ import json
 import os
 import secrets
 import threading
+import time
 from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .constants import STEAM_ALLOWLIST
+from .constants import STEAM_ALLOWLIST, STEAM_ALLOWLIST_DISABLED
 
 STEAM_OPENID_URL = "https://steamcommunity.com/openid/login"
 STEAM_ID_PREFIX = "https://steamcommunity.com/openid/id/"
@@ -20,6 +21,11 @@ SESSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 
 _sessions_lock = threading.Lock()
 _sessions = {}  # token -> steam_id64
+
+SUMMARY_CACHE_TTL = 300  # seconds - display names/avatars rarely change mid-session
+
+_summary_cache_lock = threading.Lock()
+_summary_cache = {}  # steam_id -> (expires_at, {personaName, avatar})
 
 
 def build_login_url(return_to, realm):
@@ -58,7 +64,7 @@ def verify_callback(params):
 
 
 def is_allowed(steam_id):
-    return steam_id in STEAM_ALLOWLIST
+    return STEAM_ALLOWLIST_DISABLED or steam_id in STEAM_ALLOWLIST
 
 
 def create_session(steam_id):
@@ -81,22 +87,40 @@ def destroy_session(token):
 
 
 def fetch_player_summaries(steam_ids):
-    """Returns {steam_id: {personaName, avatar}} for the given steam_ids. Missing/failed lookups are simply absent."""
+    """Returns {steam_id: {personaName, avatar}} for the given steam_ids, using a short-lived
+    cache so frequent polling doesn't hammer Steam's API. Missing/failed lookups are simply absent."""
     steam_ids = [s for s in dict.fromkeys(steam_ids) if s]
-    if not STEAM_API_KEY or not steam_ids:
+    if not steam_ids:
         return {}
-    params = {"key": STEAM_API_KEY, "steamids": ",".join(steam_ids)}
+
+    now = time.monotonic()
+    results = {}
+    to_fetch = []
+    with _summary_cache_lock:
+        for steam_id in steam_ids:
+            cached = _summary_cache.get(steam_id)
+            if cached and cached[0] > now:
+                results[steam_id] = cached[1]
+            else:
+                to_fetch.append(steam_id)
+
+    if not to_fetch or not STEAM_API_KEY:
+        return results
+
+    params = {"key": STEAM_API_KEY, "steamids": ",".join(to_fetch)}
     url = f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?{urlencode(params)}"
     try:
         with urlopen(url, timeout=10) as resp:
             payload = json.loads(resp.read())
     except (URLError, OSError, TimeoutError, json.JSONDecodeError):
-        return {}
+        return results
     players = payload.get("response", {}).get("players", [])
-    return {
-        p["steamid"]: {"personaName": p.get("personaname", p["steamid"]), "avatar": p.get("avatar", "")}
-        for p in players
-    }
+    with _summary_cache_lock:
+        for p in players:
+            summary = {"personaName": p.get("personaname", p["steamid"]), "avatar": p.get("avatar", "")}
+            _summary_cache[p["steamid"]] = (now + SUMMARY_CACHE_TTL, summary)
+            results[p["steamid"]] = summary
+    return results
 
 
 def fetch_player_summary(steam_id):

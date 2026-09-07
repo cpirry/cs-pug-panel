@@ -419,6 +419,28 @@ body {
   cursor: default;
 }
 
+.roster-slot-kick {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.roster-slot-kick:hover {
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.1);
+}
+
 @media (max-width: 960px) {
   .content {
     grid-template-columns: 1fr;
@@ -458,9 +480,9 @@ body {
 .card {
   display: flex;
   flex-direction: column;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  /* background: var(--panel);
+  border: 1px solid var(--border); 
+  border-radius: 8px; */
   padding: 18px 20px;
 }
 
@@ -562,6 +584,9 @@ body {
 }
 
 .invite-modal-box {
+  background: var(--panel);
+  border: 1px solid var(--border); 
+  /* border-radius: 8px; */
   align-items: stretch;
   text-align: left;
   gap: 14px;
@@ -696,7 +721,7 @@ body {
 
 .btn {
   border: 1px solid transparent;
-  border-radius: 8px;
+  /* border-radius: 8px; */
   padding: 9px 16px;
   font-weight: 600;
   font-size: 13px;
@@ -705,8 +730,8 @@ body {
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: var(--accent-text);
+  background: #606a8436;
+  color: rgb(121, 161, 173);
 }
 
 .btn-primary:hover:not(:disabled) {

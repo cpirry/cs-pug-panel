@@ -20,6 +20,10 @@ CS2_CONNECT_HOST = os.environ.get("CS2_CONNECT_HOST", "")
 # until this is set) - configure via the STEAM_ALLOWLIST env var, comma-separated.
 STEAM_ALLOWLIST = {s.strip() for s in os.environ.get("STEAM_ALLOWLIST", "").split(",") if s.strip()}
 
+# Set STEAM_ALLOWLIST_DISABLED=1 to let anyone with a Steam account log in, ignoring
+# STEAM_ALLOWLIST entirely. Off by default - only meant for temporary debugging.
+STEAM_ALLOWLIST_DISABLED = os.environ.get("STEAM_ALLOWLIST_DISABLED", "").strip().lower() in ("1", "true", "yes")
+
 ENV_PATH = os.path.join(COMPOSE_DIR, ".env")
 COMPOSE_FILE = os.path.join(COMPOSE_DIR, "docker-compose.yml")
 MAPS_DIR = os.path.join(GAME_DIR, "maps")
