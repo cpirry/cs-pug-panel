@@ -131,6 +131,22 @@ def move_member(actor_steam_id, steam_id, team, swap_with=None):
         return True
 
 
+def kick_member(actor_steam_id, steam_id):
+    """Removes steam_id from their lobby. Only the host may kick, and only someone else."""
+    if steam_id == actor_steam_id:
+        return False
+    with _lock:
+        lobby = None
+        for candidate in _lobbies.values():
+            if steam_id in candidate["members"]:
+                lobby = candidate
+                break
+        if lobby is None or lobby["host"] != actor_steam_id:
+            return False
+        _leave_locked(steam_id)
+        return True
+
+
 def generate_match_password():
     return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(PASSWORD_LENGTH))
 

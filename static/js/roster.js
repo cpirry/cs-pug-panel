@@ -6,7 +6,7 @@ import { rosterCtEl, rosterTEl } from "./dom.js";
 let currentLobby = null;
 let currentAuth = null;
 
-function renderRosterSide(container, count, members, canMove, hostId, selfId) {
+function renderRosterSide(container, count, members, canMove, hostId, selfId, isHost) {
   container.innerHTML = "";
   for (let i = 0; i < count; i++) {
     const member = members[i] || null;
@@ -44,6 +44,16 @@ function renderRosterSide(container, count, members, canMove, hostId, selfId) {
       readyLabel.appendChild(checkbox);
       readyLabel.appendChild(document.createTextNode("Ready"));
       slot.appendChild(readyLabel);
+
+      if (isHost && member.steamId !== selfId) {
+        const kickBtn = document.createElement("button");
+        kickBtn.type = "button";
+        kickBtn.className = "roster-slot-kick";
+        kickBtn.dataset.steamId = member.steamId;
+        kickBtn.setAttribute("aria-label", "Kick player");
+        kickBtn.textContent = "×";
+        slot.appendChild(kickBtn);
+      }
     }
 
     container.appendChild(slot);
@@ -61,6 +71,6 @@ export function renderRoster(teamSize, lobby = currentLobby, auth = currentAuth)
     !!lobby && lobby.state === "waiting" && (isHost || steamId === selfId);
   const tMembers = members.filter((m) => (m.team || "t") === "t");
   const ctMembers = members.filter((m) => (m.team || "t") === "ct");
-  renderRosterSide(rosterTEl, teamSize, tMembers, canMove, hostId, selfId);
-  renderRosterSide(rosterCtEl, teamSize, ctMembers, canMove, hostId, selfId);
+  renderRosterSide(rosterTEl, teamSize, tMembers, canMove, hostId, selfId, isHost);
+  renderRosterSide(rosterCtEl, teamSize, ctMembers, canMove, hostId, selfId, isHost);
 }

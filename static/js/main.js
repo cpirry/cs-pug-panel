@@ -41,7 +41,7 @@ import { renderRoster } from "./roster.js";
 import { wireSubtabs } from "./subtabs.js";
 import { pushRconHistory, renderConsole } from "./console.js";
 import { loadConfig, renderPresets } from "./config.js";
-import { toggleReady, startMatch, resetLobby, moveMember, buildLobbyLink } from "./lobby.js";
+import { toggleReady, startMatch, resetLobby, moveMember, kickMember, buildLobbyLink } from "./lobby.js";
 import { loadState, refreshMaps, pollTail } from "./state.js";
 
 steamLogoutBtn.addEventListener("click", async () => {
@@ -87,6 +87,16 @@ lobbyResetBtn.addEventListener("click", async () => {
     e.target.disabled = true;
     const data = await toggleReady();
     lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
+    await loadState();
+  });
+
+  container.addEventListener("click", async (e) => {
+    const kickBtn = e.target.closest(".roster-slot-kick");
+    if (!kickBtn) return;
+    if (!window.confirm("Kick this player from the lobby?")) return;
+    kickBtn.disabled = true;
+    const data = await kickMember(kickBtn.dataset.steamId);
+    lobbyMsg.textContent = data.ok ? "" : data.error || "Couldn't kick that player";
     await loadState();
   });
 
@@ -311,3 +321,4 @@ presetSaveBtn.addEventListener("click", async () => {
 loadState();
 loadConfig();
 setInterval(pollTail, 3000);
+setInterval(loadState, 3000);
