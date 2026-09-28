@@ -212,7 +212,7 @@ mapBtn.addEventListener("click", async () => {
     mapMsg.textContent = data.rcon.ok ? "Map changed live" : "Failed: " + data.rcon.error;
     mapMsg.className = "save-msg " + (data.rcon.ok ? "ok" : "err");
   }
-  await loadState();
+  await loadState({ syncMaps: true });
 });
 
 workshopAddBtn.addEventListener("click", async () => {
@@ -339,7 +339,7 @@ presetSaveBtn.addEventListener("click", async () => {
   presetSaveBtn.disabled = false;
 });
 
-loadState();
+loadState({ syncMaps: true });
 loadConfig();
 setInterval(pollTail, 3000);
 setInterval(loadState, 3000);

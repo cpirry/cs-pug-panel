@@ -34,7 +34,7 @@ function redirectIfUnauthorized(res) {
   return false;
 }
 
-export async function loadState() {
+export async function loadState({ syncMaps = false } = {}) {
   const res = await fetch("/api/state");
   if (redirectIfUnauthorized(res)) return null;
   const state = await res.json();
@@ -46,8 +46,15 @@ export async function loadState() {
   renderAuth(state.auth);
   renderLobby(state.auth, state.lobby);
   renderConsole();
-  renderMaps(state.maps, state.selectedMap);
-  activateMapTabFor(state.selectedMap, state.maps);
+  // Map selection is a local, unsaved browsing choice until "Change Map"/Start Match
+  // persists it - re-rendering it from server state on every poll would revert whatever
+  // the user is currently browsing and jump the tab back to Core Map Pool, plus rebuilds
+  // every map thumbnail (visible flicker). Only sync it where the server-side map may have
+  // actually just changed.
+  if (syncMaps) {
+    renderMaps(state.maps, state.selectedMap);
+    activateMapTabFor(state.selectedMap, state.maps);
+  }
   renderMods(state.mods);
   if (document.activeElement !== ctTeamNameInput) ctTeamNameInput.value = state.settings.ctTeamName;
   if (document.activeElement !== tTeamNameInput) tTeamNameInput.value = state.settings.tTeamName;
