@@ -105,7 +105,9 @@ def toggle_ready(steam_id):
 def move_member(actor_steam_id, steam_id, team, swap_with=None):
     """Moves steam_id onto the given team ("t"/"ct"). If swap_with is set, that member (who must
     already be on the target team) is moved onto steam_id's old team in exchange. Only the member
-    themself or the lobby host may move a member, and only while the lobby is waiting."""
+    themself or the lobby host may move a member, and only while the lobby is waiting. A player who
+    has readied up can't be moved (or moved into) - they'd otherwise get stuck unable to unready
+    without first being moved back, since ready state and team are tracked independently."""
     if team not in ("t", "ct"):
         return False
     with _lock:
@@ -120,9 +122,13 @@ def move_member(actor_steam_id, steam_id, team, swap_with=None):
             return False
         if lobby["state"] != "waiting":
             return False
+        if steam_id in lobby["ready"]:
+            return False
         teams = lobby.setdefault("teams", {})
         if swap_with:
             if swap_with not in lobby["members"] or swap_with == steam_id:
+                return False
+            if swap_with in lobby["ready"]:
                 return False
             if teams.get(swap_with, "t") != team:
                 return False
