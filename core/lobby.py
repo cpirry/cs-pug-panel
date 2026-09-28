@@ -147,6 +147,18 @@ def kick_member(actor_steam_id, steam_id):
         return True
 
 
+def delete_lobby(actor_steam_id):
+    """Deletes the actor's lobby entirely, removing every member. Only the host may delete it."""
+    with _lock:
+        for code, lobby in _lobbies.items():
+            if actor_steam_id in lobby["members"]:
+                if lobby["host"] != actor_steam_id:
+                    return False
+                del _lobbies[code]
+                return True
+    return False
+
+
 def generate_match_password():
     return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(PASSWORD_LENGTH))
 

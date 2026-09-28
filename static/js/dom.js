@@ -60,3 +60,4 @@ export const invitePlayerLink = document.getElementById("invitePlayerLink");
 export const invitePlayerCopyBtn = document.getElementById("invitePlayerCopyBtn");
 export const invitePlayerCloseBtn = document.getElementById("invitePlayerCloseBtn");
 export const invitePlayerMsg = document.getElementById("invitePlayerMsg");
+export const deleteLobbyBtn = document.getElementById("deleteLobbyBtn");

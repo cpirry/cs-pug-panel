@@ -2,6 +2,7 @@
 // Purpose: Renders lobby-level UI (code, ready/start/reset controls) and drives lobby actions.
 
 import {
+  deleteLobbyBtn,
   lobbyCode,
   lobbyCodeCopyBtn,
   lobbyConnect,
@@ -31,6 +32,7 @@ export function renderLobby(auth, lobby) {
   lobbyStartBtn.textContent =
     unready > 0 ? `Waiting on ready players (${unready}/${total})` : "Start match";
   lobbyResetBtn.hidden = !(isHost && lobby.state === "in_match");
+  deleteLobbyBtn.hidden = !isHost;
 
   const connect = lobby.connect;
   lobbyConnect.hidden = !connect;
@@ -86,4 +88,8 @@ export function moveMember(steamId, team, swapWith) {
 
 export function kickMember(steamId) {
   return postLobbyAction("/api/lobby/kick", { steamId });
+}
+
+export function deleteLobby() {
+  return postLobbyAction("/api/lobby/delete");
 }

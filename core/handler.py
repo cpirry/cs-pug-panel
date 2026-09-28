@@ -42,6 +42,7 @@ from .gamemode_cfg import (
 from .idle import mark_activity
 from .lobby import (
     create_lobby,
+    delete_lobby,
     find_lobby_for,
     generate_match_password,
     join_lobby,
@@ -607,6 +608,16 @@ class Handler(BaseHTTPRequestHandler):
             target = body.get("steamId")
             if not target or not kick_member(steam_id, target):
                 self._send_json({"error": "couldn't kick that player"}, 400)
+                return
+            self._send_json({"ok": True})
+            return
+
+        if parsed.path == "/api/lobby/delete":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            if not delete_lobby(steam_id):
+                self._send_json({"error": "couldn't delete this lobby"}, 400)
                 return
             self._send_json({"ok": True})
             return
