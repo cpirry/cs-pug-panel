@@ -34,6 +34,7 @@ import {
   invitePlayerCopyBtn,
   invitePlayerCloseBtn,
   invitePlayerMsg,
+  deleteLobbyBtn,
 } from "./dom.js";
 import { selectedMap, selectedMapSource } from "./maps.js";
 import { selectedMode, selectedGameMode, teamSizeToMax, selectedTeamSize } from "./settings.js";
@@ -41,7 +42,15 @@ import { renderRoster } from "./roster.js";
 import { wireSubtabs } from "./subtabs.js";
 import { pushRconHistory, renderConsole } from "./console.js";
 import { loadConfig, renderPresets } from "./config.js";
-import { toggleReady, startMatch, resetLobby, moveMember, kickMember, buildLobbyLink } from "./lobby.js";
+import {
+  toggleReady,
+  startMatch,
+  resetLobby,
+  moveMember,
+  kickMember,
+  deleteLobby,
+  buildLobbyLink,
+} from "./lobby.js";
 import { loadState, refreshMaps, pollTail } from "./state.js";
 
 steamLogoutBtn.addEventListener("click", async () => {
@@ -79,6 +88,18 @@ lobbyResetBtn.addEventListener("click", async () => {
   lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
   await loadState();
   lobbyResetBtn.disabled = false;
+});
+
+deleteLobbyBtn.addEventListener("click", async () => {
+  if (!window.confirm("Delete this lobby? This removes everyone from it.")) return;
+  deleteLobbyBtn.disabled = true;
+  const data = await deleteLobby();
+  if (data.ok) {
+    window.location.href = "/";
+    return;
+  }
+  lobbyMsg.textContent = data.error || "Couldn't delete this lobby";
+  deleteLobbyBtn.disabled = false;
 });
 
 [rosterTEl, rosterCtEl].forEach((container) => {
