@@ -105,7 +105,11 @@ deleteLobbyBtn.addEventListener("click", async () => {
 [rosterTEl, rosterCtEl].forEach((container) => {
   container.addEventListener("change", async (e) => {
     if (!e.target.classList.contains("roster-ready-checkbox")) return;
-    e.target.disabled = true;
+    // Don't imperatively disable e.target here: Preact tracks this checkbox's "disabled" prop
+    // independently of the real DOM (it's always `false` for your own checkbox, every render),
+    // so if the actual value is ever changed outside a Preact-driven write, Preact's diff sees
+    // no change next render and never writes `false` back - the checkbox stays stuck disabled
+    // forever. That's exactly what was blocking unreadying here.
     const data = await toggleReady();
     lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
     await loadState();
