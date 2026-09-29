@@ -318,7 +318,12 @@ document.querySelectorAll(".side-nav-btn").forEach((btn) => {
     document.querySelectorAll(".tab-panel").forEach((p) => (p.hidden = true));
     btn.classList.add("active");
     document.querySelector(`.tab-panel[data-panel="${btn.dataset.tab}"]`).hidden = false;
-    if (btn.dataset.tab === "logs") {
+  });
+});
+
+document.querySelectorAll(".admin-subnav .subtab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.subtab === "monitoring") {
       consoleEl.scrollTop = consoleEl.scrollHeight;
       logsEl.scrollTop = logsEl.scrollHeight;
     }

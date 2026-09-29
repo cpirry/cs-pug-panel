@@ -44,9 +44,7 @@
     <main class="content">
       <nav class="side-nav">
         <button class="side-nav-btn active" data-tab="lobby">Lobby</button>
-        <button class="side-nav-btn" data-tab="config">Config Editor</button>
         <button class="side-nav-btn" data-tab="admin">Admin</button>
-        <button class="side-nav-btn" data-tab="logs">Logs</button>
       </nav>
 
       <div class="tab-panel tab-panel-split" data-panel="lobby">
@@ -153,65 +151,67 @@
         </div>
       </div>
 
-      <div class="tab-panel" data-panel="config" hidden>
-        <section class="card config-card">
-          <div class="card-header-row">
-            <h2>Config</h2>
-            <select id="configFileSelect" class="config-file-select"></select>
-          </div>
-          <textarea id="configEditor" class="config-editor" spellcheck="false"></textarea>
-          <div class="card-actions">
-            <button id="configSaveBtn" class="btn btn-primary">Save Config</button>
-            <span id="configMsg" class="msg"></span>
-          </div>
-
-          <hr class="card-divider">
-
-          <h2>Saved Alternatives</h2>
-          <div class="preset-row">
-            <input id="presetName" type="text" placeholder="Preset name...">
-            <button id="presetSaveBtn" class="btn btn-primary">Save As Alternative</button>
-          </div>
-          <div id="presetList" class="preset-list"></div>
-        </section>
-      </div>
-
       <div class="tab-panel" data-panel="admin" hidden>
-        <section class="card">
-          <h2>Admin</h2>
-          <p class="hint">Admin tools are coming soon.</p>
-        </section>
-      </div>
+        <div class="subtab-group admin-subnav">
+          <nav class="subtabs">
+            <button class="subtab-btn active" data-subtab="config-editor">Config Editor</button>
+            <button class="subtab-btn" data-subtab="monitoring">Monitoring</button>
+          </nav>
 
-      <div class="tab-panel" data-panel="logs" hidden>
-        <section class="card console-card">
-          <h2>Console</h2>
-          <div id="console" class="log-view"></div>
-          <form id="rconForm" class="rcon-row">
-            <input id="rconInput" type="text" placeholder="Enter a command..." autocomplete="off" disabled>
-            <button id="rconSend" type="submit" class="btn btn-primary" disabled>Send</button>
-          </form>
-        </section>
-
-        <div class="settings-extra-row">
-          <section class="card">
-            <h2>Log File</h2>
-            <div id="logs" class="log-view log-view-small"></div>
-          </section>
-
-          <section class="card usage-card">
-            <div class="card-header-row">
-              <h2>Usage</h2>
-              <div class="segmented-ghost">
-                <button type="button" class="active" disabled>CPU</button>
-                <button type="button" disabled>RAM</button>
-                <button type="button" disabled>Storage</button>
+          <div class="subtab-panel" data-subpanel="config-editor">
+            <section class="card config-card">
+              <div class="card-header-row">
+                <h2>Config</h2>
+                <select id="configFileSelect" class="config-file-select"></select>
               </div>
+              <textarea id="configEditor" class="config-editor" spellcheck="false"></textarea>
+              <div class="card-actions">
+                <button id="configSaveBtn" class="btn btn-primary">Save Config</button>
+                <span id="configMsg" class="msg"></span>
+              </div>
+
+              <hr class="card-divider">
+
+              <h2>Saved Alternatives</h2>
+              <div class="preset-row">
+                <input id="presetName" type="text" placeholder="Preset name...">
+                <button id="presetSaveBtn" class="btn btn-primary">Save As Alternative</button>
+              </div>
+              <div id="presetList" class="preset-list"></div>
+            </section>
+          </div>
+
+          <div class="subtab-panel" data-subpanel="monitoring" hidden>
+            <section class="card console-card">
+              <h2>Console</h2>
+              <div id="console" class="log-view"></div>
+              <form id="rconForm" class="rcon-row">
+                <input id="rconInput" type="text" placeholder="Enter a command..." autocomplete="off" disabled>
+                <button id="rconSend" type="submit" class="btn btn-primary" disabled>Send</button>
+              </form>
+            </section>
+
+            <div class="settings-extra-row">
+              <section class="card">
+                <h2>Log File</h2>
+                <div id="logs" class="log-view log-view-small"></div>
+              </section>
+
+              <section class="card usage-card">
+                <div class="card-header-row">
+                  <h2>Usage</h2>
+                  <div class="segmented-ghost">
+                    <button type="button" class="active" disabled>CPU</button>
+                    <button type="button" disabled>RAM</button>
+                    <button type="button" disabled>Storage</button>
+                  </div>
+                </div>
+                <div class="usage-placeholder">
+                  <span>Usage metrics coming soon</span>
+                </div>
+              </section>
             </div>
-            <div class="usage-placeholder">
-              <span>Usage metrics coming soon</span>
-            </div>
-          </section>
+          </div>
         </div>
       </div>
     </main>
