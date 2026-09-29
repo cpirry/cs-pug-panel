@@ -112,12 +112,13 @@
 
           <section class="card">
             <h2>Match Format</h2>
+            <!-- Disabled for everyone (including the host) until match-format handling is actually implemented. -->
             <div id="formats" class="segmented">
-              <label><input type="radio" name="mode" value="bo1"><span>BO1</span></label>
-              <label><input type="radio" name="mode" value="bo3"><span>BO3</span></label>
-              <label><input type="radio" name="mode" value="bo5"><span>BO5</span></label>
+              <label><input type="radio" name="mode" value="bo1" disabled><span>BO1</span></label>
+              <label><input type="radio" name="mode" value="bo3" disabled><span>BO3</span></label>
+              <label><input type="radio" name="mode" value="bo5" disabled><span>BO5</span></label>
             </div>
-            <p class="hint">Sets round count / overtime. Map veto &amp; series scoring needs a match plugin (e.g. MatchZy) which isn't installed.</p>
+            <p class="hint">Coming soon - sets round count / overtime. Map veto &amp; series scoring needs a match plugin (e.g. MatchZy) which isn't installed.</p>
 
             <hr class="card-divider">
 

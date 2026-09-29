@@ -50,6 +50,7 @@ from .lobby import (
     leave_lobby,
     move_member,
     reset_lobby,
+    set_selected_map,
     start_lobby,
     toggle_ready,
 )
@@ -174,6 +175,8 @@ class Handler(BaseHTTPRequestHandler):
             "state": lobby["state"],
             "connect": lobby.get("connect"),
             "allReady": bool(lobby["members"]) and len(ready_set) == len(lobby["members"]),
+            "selectedMap": lobby.get("selectedMap", ""),
+            "selectedMapSource": lobby.get("selectedMapSource", "local"),
         }
 
     def do_GET(self):
@@ -597,6 +600,18 @@ class Handler(BaseHTTPRequestHandler):
             moved = move_member(steam_id, target, team, swap_with)
             if not moved:
                 self._send_json({"error": "couldn't move that player"}, 400)
+                return
+            self._send_json({"ok": True})
+            return
+
+        if parsed.path == "/api/lobby/map":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            map_id = body.get("map", "")
+            map_source = body.get("mapSource", "local")
+            if not map_id or not set_selected_map(steam_id, map_id, map_source):
+                self._send_json({"error": "couldn't set the map selection"}, 400)
                 return
             self._send_json({"ok": True})
             return

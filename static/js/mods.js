@@ -3,7 +3,7 @@
 
 import { modsEl } from "./dom.js";
 
-export function renderMods(mods) {
+export function renderMods(mods, isHost) {
   modsEl.innerHTML = "";
   for (const mod of mods) {
     const row = document.createElement("div");
@@ -17,6 +17,7 @@ export function renderMods(mods) {
     const input = document.createElement("input");
     input.type = "checkbox";
     input.checked = mod.enabled;
+    input.disabled = !isHost;
     input.addEventListener("change", async () => {
       input.disabled = true;
       await fetch("/api/mods/toggle", {

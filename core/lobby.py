@@ -54,6 +54,8 @@ def create_lobby(host_steam_id):
             "state": "waiting",
             "ready": set(),
             "teams": {host_steam_id: "t"},
+            "selectedMap": "",
+            "selectedMapSource": "local",
         }
         return code
 
@@ -134,6 +136,26 @@ def move_member(actor_steam_id, steam_id, team, swap_with=None):
                 return False
             teams[swap_with] = teams.get(steam_id, "t")
         teams[steam_id] = team
+        return True
+
+
+def set_selected_map(actor_steam_id, map_id, map_source):
+    """Sets the lobby's shared map pick, visible to every member. Only the host may set it, and
+    only while the lobby is waiting."""
+    if map_source not in ("local", "workshop"):
+        return False
+    with _lock:
+        lobby = None
+        for candidate in _lobbies.values():
+            if actor_steam_id in candidate["members"]:
+                lobby = candidate
+                break
+        if lobby is None or lobby["host"] != actor_steam_id:
+            return False
+        if lobby["state"] != "waiting":
+            return False
+        lobby["selectedMap"] = map_id
+        lobby["selectedMapSource"] = map_source
         return True
 
 

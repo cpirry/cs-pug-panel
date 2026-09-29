@@ -222,6 +222,14 @@ body {
   gap: 4px;
 }
 
+.content.hide-nav {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.content.hide-nav .tab-panel {
+  grid-column: 1 / span 2;
+}
+
 .side-nav-btn {
   background: transparent;
   border: none;
@@ -857,6 +865,15 @@ body {
 .map-tile:has(input:checked) {
   border-color: var(--accent);
   filter: brightness(1);
+}
+
+.map-tile:has(input:disabled) {
+  cursor: not-allowed;
+  filter: brightness(0.4);
+}
+
+.map-tile:has(input:checked:disabled) {
+  filter: brightness(0.7);
 }
 
 .map-tile input {

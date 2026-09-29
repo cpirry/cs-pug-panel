@@ -9,6 +9,10 @@ import {
   ctTeamNameInput,
   tTeamNameInput,
   serverHeadingNameEl,
+  contentEl,
+  sideNavEl,
+  workshopInput,
+  workshopAddBtn,
 } from "./dom.js";
 import { renderAuth } from "./auth.js";
 import { renderLobby } from "./lobby.js";
@@ -18,9 +22,18 @@ import { maxToTeamSize } from "./settings.js";
 import { renderRoster } from "./roster.js";
 import { setConsoleRunning, renderConsole, renderLines, renderPlayers, setLatestTail } from "./console.js";
 
+// setStatus() is also called from pollTail(), which has no lobby/auth data of its own - cache
+// the host flag here (set from loadState(), which does have it) so both call sites agree on
+// whether the map-change button should be host-gated instead of fighting over its disabled state.
+let cachedIsHost = false;
+
 export function setStatus(running) {
-  mapBtn.disabled = !running;
-  mapBtn.title = running ? "" : "Can only change the map when the server is running.";
+  mapBtn.disabled = !running || !cachedIsHost;
+  mapBtn.title = !cachedIsHost
+    ? "Only the host can change the map."
+    : running
+    ? ""
+    : "Can only change the map when the server is running.";
   rconInput.disabled = !running;
   rconSend.disabled = !running;
   setConsoleRunning(running);
@@ -42,20 +55,29 @@ export async function loadState({ syncMaps = false } = {}) {
     window.location.href = "/";
     return null;
   }
+  const isHost = !!(state.auth && state.auth.loggedIn && state.lobby.host === state.auth.steamId);
+  cachedIsHost = isHost;
   setStatus(state.running);
   renderAuth(state.auth);
   renderLobby(state.auth, state.lobby);
   renderConsole();
-  // Map selection is a local, unsaved browsing choice until "Change Map"/Start Match
-  // persists it - re-rendering it from server state on every poll would revert whatever
-  // the user is currently browsing and jump the tab back to Core Map Pool, plus rebuilds
-  // every map thumbnail (visible flicker). Only sync it where the server-side map may have
-  // actually just changed.
-  if (syncMaps) {
-    renderMaps(state.maps, state.selectedMap);
-    activateMapTabFor(state.selectedMap, state.maps);
+
+  sideNavEl.hidden = !isHost;
+  contentEl.classList.toggle("hide-nav", !isHost);
+
+  // The host's own map pick is local browsing until they click a tile (which persists it
+  // immediately) - re-rendering from server state on every poll would otherwise revert whatever
+  // they're currently browsing and jump the tab back to Core Map Pool. Everyone else can't
+  // interact with map selection at all (host-only), so there's no local browsing state of theirs
+  // to protect - always sync for them, so the host's pick shows up live.
+  if (syncMaps || !isHost) {
+    renderMaps(state.maps, state.lobby.selectedMap, !isHost);
+    activateMapTabFor(state.lobby.selectedMap, state.maps);
   }
-  renderMods(state.mods);
+  workshopInput.disabled = !isHost;
+  workshopAddBtn.disabled = !isHost;
+
+  renderMods(state.mods, isHost);
   if (document.activeElement !== ctTeamNameInput) ctTeamNameInput.value = state.settings.ctTeamName;
   if (document.activeElement !== tTeamNameInput) tTeamNameInput.value = state.settings.tTeamName;
   const modeInput = document.querySelector(`input[name=mode][value="${state.mode}"]`);
@@ -63,6 +85,9 @@ export async function loadState({ syncMaps = false } = {}) {
   const teamSize = maxToTeamSize(state.settings.maxPlayers);
   const teamSizeInput = document.querySelector(`input[name=teamSize][value="${teamSize}"]`);
   if (teamSizeInput) teamSizeInput.checked = true;
+  document.querySelectorAll('input[name=teamSize]').forEach((input) => {
+    input.disabled = !isHost;
+  });
   renderRoster(teamSize, state.lobby, state.auth);
   if (state.auth && state.auth.loggedIn) {
     serverHeadingNameEl.textContent = `${state.auth.displayName}'s Lobby`;
@@ -74,7 +99,8 @@ export async function refreshMaps() {
   const res = await fetch("/api/state");
   if (redirectIfUnauthorized(res)) return;
   const state = await res.json();
-  renderMaps(state.maps, state.selectedMap);
+  const isHost = !!(state.auth && state.lobby && state.lobby.host === state.auth.steamId);
+  renderMaps(state.maps, state.lobby ? state.lobby.selectedMap : "", !isHost);
 }
 
 export async function pollTail() {
