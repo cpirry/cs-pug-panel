@@ -59,6 +59,14 @@ CORE_MAPS = [
     "de_overpass",
 ]
 
+# Best-effort list of CS2's Wingman (2v2) map pool - edit to match whatever's actually
+# installed on the server (list_maps() only shows entries that are actually present).
+WINGMAN_MAPS = [
+    "de_lake",
+    "de_shortdust",
+    "de_shortnuke",
+]
+
 CS2_APP_ID = 730
 
 # Game modes that are implemented as CounterStrikeSharp plugins living alongside
@@ -75,3 +83,8 @@ GAME_MODE_MODS = {
 
 GAMEMODE_CFG_RE = re.compile(r"^gamemode_[a-z0-9_]+\.cfg$")
 DEFAULT_GAMEMODE_CFG = "gamemode_competitive.cfg"
+
+# For 2v2/3v3/4v4 team sizes, which gamemode config to +exec at server launch based on the
+# host's Defusal/Rush pick (see handler.py's /api/settings).
+SMALL_TEAM_DEFUSAL_CFG = "gamemode_competitive2v2.cfg"
+SMALL_TEAM_RUSH_CFG = "gamemode_rush.cfg"

@@ -67,11 +67,17 @@ export async function loadState({ syncMaps = false } = {}) {
 
   // The host's own map pick is local browsing until they click a tile (which persists it
   // immediately) - re-rendering from server state on every poll would otherwise revert whatever
-  // they're currently browsing and jump the tab back to Core Map Pool. Everyone else can't
+  // they're currently browsing and jump the tab back to Active Duty. Everyone else can't
   // interact with map selection at all (host-only), so there's no local browsing state of theirs
   // to protect - always sync for them, so the host's pick shows up live.
   if (syncMaps || !isHost) {
-    renderMaps(state.maps, state.lobby.selectedMap, !isHost);
+    renderMaps(
+      state.maps,
+      state.lobby.selectedMap,
+      state.lobby.selectedMapSource,
+      !isHost,
+      state.lobby.selectedMapIsRandom
+    );
     activateMapTabFor(state.lobby.selectedMap, state.maps);
   }
   workshopInput.disabled = !isHost;
@@ -88,6 +94,15 @@ export async function loadState({ syncMaps = false } = {}) {
   document.querySelectorAll('input[name=teamSize]').forEach((input) => {
     input.disabled = !isHost;
   });
+
+  const smallTeamModeInput = document.querySelector(
+    `input[name=smallTeamMode][value="${state.settings.smallTeamMode}"]`
+  );
+  if (smallTeamModeInput) smallTeamModeInput.checked = true;
+  const smallTeamModeApplicable = teamSize >= 2 && teamSize <= 4;
+  document.querySelectorAll('input[name=smallTeamMode]').forEach((input) => {
+    input.disabled = !isHost || !smallTeamModeApplicable;
+  });
   renderRoster(teamSize, state.lobby, state.auth);
   if (state.auth && state.auth.loggedIn) {
     serverHeadingNameEl.textContent = `${state.auth.displayName}'s Lobby`;
@@ -100,7 +115,13 @@ export async function refreshMaps() {
   if (redirectIfUnauthorized(res)) return;
   const state = await res.json();
   const isHost = !!(state.auth && state.lobby && state.lobby.host === state.auth.steamId);
-  renderMaps(state.maps, state.lobby ? state.lobby.selectedMap : "", !isHost);
+  renderMaps(
+    state.maps,
+    state.lobby ? state.lobby.selectedMap : "",
+    state.lobby ? state.lobby.selectedMapSource : "local",
+    !isHost,
+    state.lobby ? state.lobby.selectedMapIsRandom : false
+  );
 }
 
 export async function pollTail() {
