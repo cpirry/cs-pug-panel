@@ -3,27 +3,33 @@
 
 import os
 
+from .cfg_sync import read_molotov_glass, write_molotov_glass
 from .constants import GAME_MODE_MODS, PLUGINS_DIR
+
+# Not a real CounterStrikeSharp plugin - just a server cvar (sv_molotov_broken_glass_trap)
+# surfaced as a toggle in the same Mods list, since that's the closest existing UI for a
+# simple on/off gameplay setting. Special-cased in list_mods()/toggle_mod() below.
+MOLOTOV_GLASS_MOD_NAME = "Use molotov broken glass update?"
 
 
 def list_mods():
-    if not os.path.isdir(PLUGINS_DIR):
-        return []
-    game_mode_mod_names = set(GAME_MODE_MODS.values())
     mods = []
-    for name in sorted(os.listdir(PLUGINS_DIR)):
-        full = os.path.join(PLUGINS_DIR, name)
-        if not os.path.isdir(full):
-            continue
-        if name.startswith(".disabled_"):
-            real_name = name[len(".disabled_") :]
-            if real_name in game_mode_mod_names:
+    if os.path.isdir(PLUGINS_DIR):
+        game_mode_mod_names = set(GAME_MODE_MODS.values())
+        for name in sorted(os.listdir(PLUGINS_DIR)):
+            full = os.path.join(PLUGINS_DIR, name)
+            if not os.path.isdir(full):
                 continue
-            mods.append({"name": real_name, "enabled": False})
-        else:
-            if name in game_mode_mod_names:
-                continue
-            mods.append({"name": name, "enabled": True})
+            if name.startswith(".disabled_"):
+                real_name = name[len(".disabled_") :]
+                if real_name in game_mode_mod_names:
+                    continue
+                mods.append({"name": real_name, "enabled": False})
+            else:
+                if name in game_mode_mod_names:
+                    continue
+                mods.append({"name": name, "enabled": True})
+    mods.append({"name": MOLOTOV_GLASS_MOD_NAME, "enabled": read_molotov_glass()})
     return mods
 
 
@@ -49,6 +55,10 @@ def write_game_mode(mode):
 
 
 def toggle_mod(name):
+    if name == MOLOTOV_GLASS_MOD_NAME:
+        enabled = not read_molotov_glass()
+        write_molotov_glass(enabled)
+        return enabled
     enabled_path = os.path.join(PLUGINS_DIR, name)
     disabled_path = os.path.join(PLUGINS_DIR, ".disabled_" + name)
     if os.path.isdir(enabled_path):

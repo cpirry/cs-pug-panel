@@ -49,6 +49,40 @@ def write_match_format(mode):
         f.write("\n".join(out) + "\n")
 
 
+def read_molotov_glass():
+    if not os.path.exists(SERVER_CFG):
+        return False
+    enabled = False
+    with open(SERVER_CFG) as f:
+        for line in f:
+            m = re.match(r"\s*sv_molotov_broken_glass_trap\s+(\d+)", line)
+            if m:
+                enabled = m.group(1) != "0"
+    return enabled
+
+
+def write_molotov_glass(enabled):
+    value = "1" if enabled else "0"
+    lines = []
+    if os.path.exists(SERVER_CFG):
+        with open(SERVER_CFG) as f:
+            lines = f.read().splitlines()
+    out = []
+    seen = False
+    for line in lines:
+        if re.match(r"\s*sv_molotov_broken_glass_trap\s+", line):
+            out.append(f"sv_molotov_broken_glass_trap {value}")
+            seen = True
+        else:
+            out.append(line)
+    if not seen:
+        out.append("")
+        out.append("// Molotov broken glass trap (set by control panel)")
+        out.append(f"sv_molotov_broken_glass_trap {value}")
+    with open(SERVER_CFG, "w") as f:
+        f.write("\n".join(out) + "\n")
+
+
 def read_team_names():
     ct_name = t_name = ""
     if not os.path.exists(SERVER_CFG):
