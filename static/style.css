@@ -1183,6 +1183,12 @@ body {
   font-family: "Courier New", monospace;
   font-size: 12.5px;
   line-height: 1.55;
+  /* Valve's own cfg files are tab-aligned assuming a tab width of 4 (confirmed against
+     the actual gamemode_competitive.cfg on disk - cvar values consistently land on the
+     same column at tab-size 4), but a browser's default textarea tab-size is 8, which
+     throws every value out of alignment despite the file's tabs being perfectly fine. */
+  tab-size: 4;
+  -moz-tab-size: 4;
 }
 
 .config-editor:focus {
