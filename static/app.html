@@ -5,7 +5,7 @@
 <title>CS2 Server Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -30,14 +30,15 @@
     <div class="server-heading">
       <h1>
         <span id="serverHeadingName">cs2_server</span>
-        <span class="lobby-code" id="lobbyCode" hidden></span>
+        
+      </h1>
+      <span class="lobby-code" id="lobbyCode" hidden></span>
         <button type="button" id="lobbyCodeCopyBtn" class="icon-btn" hidden aria-label="Copy lobby code">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3.5 10.5H2.5A1 1 0 0 1 1.5 9.5V2.5A1 1 0 0 1 2.5 1.5H9.5A1 1 0 0 1 10.5 2.5V3.5"/></svg>
         </button>
-      </h1>
-      <div class="server-meta">
+      <!-- <div class="server-meta">
         <span>Counter-Strike 2</span>
-      </div>
+      </div> -->
     </div>
 
     <main class="content">
@@ -50,7 +51,7 @@
 
       <div class="tab-panel tab-panel-split" data-panel="lobby">
         <section class="card">
-          <h2>Team Setup</h2>
+          <!-- <h2>Team Setup</h2> -->
           <div class="roster-columns">
             <div class="roster-row roster-names-row">
               <div class="field roster-name-field"><input id="tTeamName" type="text" placeholder="Terrorists"></div>
@@ -111,7 +112,7 @@
         <div class="lobby-right-col">
           <div class="lobby-toolbar">
             <button type="button" id="invitePlayerBtn" class="btn btn-primary">Invite Player</button>
-            <button type="button" id="deleteLobbyBtn" class="btn btn-danger" hidden>Delete Lobby</button>
+            <button type="button" id="deleteLobbyBtn" class="btn btn-danger" hidden>Close Lobby</button>
           </div>
 
           <section class="card">

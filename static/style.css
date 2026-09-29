@@ -27,7 +27,7 @@ body {
   padding: 24px;
   background: var(--bg);
   color: var(--text);
-  font-family: "Rubik", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: "Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 .app {
@@ -103,7 +103,7 @@ body {
 
 .steam-logout-btn {
   border: 1px solid rgba(229, 72, 77, 0.4);
-  border-radius: 6px;
+  /* border-radius: 6px; */
   background: transparent;
   color: var(--danger);
   font-size: 11px;
@@ -134,7 +134,7 @@ body {
   flex-shrink: 0;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  /* border-radius: 6px; */
   color: var(--text-dim);
   cursor: pointer;
   padding: 0;
@@ -160,6 +160,10 @@ body {
 .lobby-toolbar {
   display: flex;
   gap: 10px;
+}
+
+#deleteLobbyBtn {
+  margin-left: auto;
 }
 
 .lobby-connect {
@@ -239,7 +243,7 @@ body {
   text-align: left;
   padding: 10px 12px;
   cursor: pointer;
-  border-radius: 6px;
+  /* border-radius: 6px; */
   border-left: 2px solid transparent;
 }
 
@@ -330,6 +334,23 @@ body {
   margin-bottom: 0;
 }
 
+#tTeamName,
+#ctTeamName {
+  text-align: center;
+  background: none;
+  border: none;
+  /* border-radius: 6px; */
+  transition: background-color 0.1s ease;
+}
+
+#tTeamName:hover,
+#ctTeamName:hover,
+#tTeamName:focus,
+#ctTeamName:focus {
+  background: var(--panel-alt);
+  cursor: pointer;
+}
+
 .roster-vrule-spacer {
   width: 32px;
   flex-shrink: 0;
@@ -368,6 +389,10 @@ body {
   transition: background-color 0.1s ease;
 }
 
+.roster-slot:not([data-steam-id=""]) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .roster-slot-draggable {
   cursor: grab;
 }
@@ -404,6 +429,14 @@ body {
   color: var(--success);
 }
 
+.roster-slot-host-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #c9a2275e;
+  padding-left: 4px;
+}
+
 .roster-slot-ready {
   display: flex;
   align-items: center;
@@ -437,7 +470,7 @@ body {
   justify-content: center;
   background: transparent;
   border: none;
-  border-radius: 4px;
+  /* border-radius: 4px; */
   color: var(--text-dim);
   font-size: 15px;
   line-height: 1;
@@ -551,7 +584,7 @@ body {
 .landing-join-row input {
   background: var(--panel-alt);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  /* border-radius: 6px; */
   color: var(--text);
   padding: 8px 10px;
   font-size: 13px;
@@ -637,7 +670,7 @@ body {
   min-width: 0;
   background: var(--panel-alt);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  /* border-radius: 6px; */
   color: var(--accent);
   padding: 9px 10px;
   font-size: 13px;
@@ -670,7 +703,7 @@ body {
   width: 100%;
   background: var(--panel-alt);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  /* border-radius: 8px; */
   padding: 9px 10px;
   color: var(--text);
   font-size: 13px;
@@ -703,7 +736,7 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   padding: 5px 8px;
-  border-radius: 6px;
+  /* border-radius: 6px; */
 }
 
 .password-toggle:hover {
@@ -779,7 +812,7 @@ body {
   gap: 4px;
   background: var(--panel-alt);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  /* border-radius: 8px; */
   padding: 4px;
 }
 
@@ -787,7 +820,7 @@ body {
   flex: 1;
   text-align: center;
   padding: 8px;
-  border-radius: 6px;
+  /* border-radius: 6px; */
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
@@ -826,7 +859,7 @@ body {
   font-size: 11px;
   font-weight: 600;
   padding: 6px 10px;
-  border-radius: 6px;
+  /* border-radius: 6px; */
 }
 
 .segmented-ghost button.active {
@@ -848,7 +881,7 @@ body {
 .map-tile {
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
+  /* border-radius: 8px; */
   border: 2px solid var(--border);
   background: var(--panel-alt);
   overflow: hidden;
@@ -966,7 +999,7 @@ body {
   align-items: center;
   gap: 9px;
   padding: 9px 10px;
-  border-radius: 8px;
+  /* border-radius: 8px; */
   background: var(--panel-alt);
   font-size: 13px;
 }
@@ -997,7 +1030,7 @@ body {
   justify-content: space-between;
   padding: 9px 10px;
   background: var(--panel-alt);
-  border-radius: 8px;
+  /* border-radius: 8px; */
   font-size: 13px;
 }
 
@@ -1052,7 +1085,7 @@ body {
 .log-view {
   background: #08090b;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  /* border-radius: 10px; */
   padding: 12px;
   font-family: "Courier New", monospace;
   font-size: 12.5px;
@@ -1100,7 +1133,7 @@ body {
   flex: 1;
   background: var(--panel-alt);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  /* border-radius: 8px;  */
   padding: 9px 10px;
   color: var(--text);
   font-family: "Courier New", monospace;
@@ -1118,7 +1151,7 @@ body {
   align-items: center;
   justify-content: center;
   border: 1px dashed var(--border);
-  border-radius: 10px;
+  /* border-radius: 10px;  */
   background: var(--panel-alt);
   color: var(--text-dim);
   font-size: 13px;
@@ -1127,7 +1160,7 @@ body {
 .config-file-select {
   background: var(--panel-alt);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  /* border-radius: 8px;  */
   padding: 7px 10px;
   color: var(--text);
   font-size: 12px;
@@ -1144,7 +1177,7 @@ body {
   resize: vertical;
   background: #08090b;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  /* border-radius: 10px;  */
   padding: 12px;
   color: var(--text);
   font-family: "Courier New", monospace;
@@ -1167,7 +1200,7 @@ body {
   flex: 1;
   background: var(--panel-alt);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  /* border-radius: 8px;  */
   padding: 9px 10px;
   color: var(--text);
   font-size: 13px;
@@ -1189,7 +1222,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 9px 10px;
-  border-radius: 8px;
+  /* border-radius: 8px;  */
   background: var(--panel-alt);
   font-size: 13px;
 }

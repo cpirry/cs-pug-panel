@@ -25,12 +25,17 @@ export function renderLobby(auth, lobby) {
 
   const isHost = lobby.host === auth.steamId;
   const total = lobby.members.length;
-  const unready = lobby.members.filter((m) => !m.ready).length;
+  const ready = lobby.members.filter((m) => m.ready).length;
+  const unready = total - ready;
 
-  lobbyStartBtn.hidden = !(isHost && lobby.state === "waiting");
-  lobbyStartBtn.disabled = unready > 0;
+  lobbyStartBtn.hidden = lobby.state !== "waiting";
+  lobbyStartBtn.disabled = unready > 0 || !isHost;
   lobbyStartBtn.textContent =
-    unready > 0 ? `Waiting on ready players (${unready}/${total})` : "Start match";
+    unready > 0
+      ? `Waiting on ready players (${ready}/${total})`
+      : isHost
+      ? "Start match"
+      : "Match ready to start";
   lobbyResetBtn.hidden = !(isHost && lobby.state === "in_match");
   deleteLobbyBtn.hidden = !isHost;
 
