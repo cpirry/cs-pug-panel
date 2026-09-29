@@ -42,7 +42,7 @@ function RosterSlot({ member, hostId, selfId, isHost, canMove }) {
     >
       <img class="roster-slot-avatar" alt="" src=${member.avatar || undefined} />
       <div class="roster-slot-name${member.ready ? " is-ready" : ""}">
-        ${member.displayName}${member.steamId === hostId ? " (host)" : ""}
+        ${member.displayName}${member.steamId === hostId ? html` <span class="roster-slot-host-badge">HOST</span>` : null}
       </div>
       <label class="roster-slot-ready">
         <input type="checkbox" class="roster-ready-checkbox" checked=${!!member.ready} disabled=${!isSelf} />
