@@ -36,11 +36,18 @@ import {
   invitePlayerMsg,
   deleteLobbyBtn,
   mapsCoreEl,
+  mapsWingmanEl,
   mapsExtraEl,
   mapsWorkshopEl,
 } from "./dom.js";
 import { selectedMap, selectedMapSource } from "./maps.js";
-import { selectedMode, selectedGameMode, teamSizeToMax, selectedTeamSize } from "./settings.js";
+import {
+  selectedMode,
+  selectedGameMode,
+  teamSizeToMax,
+  selectedTeamSize,
+  selectedSmallTeamMode,
+} from "./settings.js";
 import { renderRoster } from "./roster.js";
 import { wireSubtabs } from "./subtabs.js";
 import { pushRconHistory, renderConsole } from "./console.js";
@@ -69,6 +76,7 @@ function pushSettings(extra = {}) {
       maxPlayers: teamSizeToMax(selectedTeamSize()),
       mode: selectedMode(),
       gameMode: selectedGameMode(),
+      smallTeamMode: selectedSmallTeamMode(),
       ctTeamName: ctTeamNameInput.value,
       tTeamName: tTeamNameInput.value,
       ...extra,
@@ -206,7 +214,7 @@ invitePlayerCopyBtn.addEventListener("click", async () => {
   }
 });
 
-[mapsCoreEl, mapsExtraEl, mapsWorkshopEl].forEach((container) => {
+[mapsCoreEl, mapsWingmanEl, mapsExtraEl, mapsWorkshopEl].forEach((container) => {
   container.addEventListener("change", async (e) => {
     if (e.target.name !== "map") return;
     // Just persists which tile is picked (for everyone else to see live) - doesn't touch the
@@ -218,6 +226,26 @@ invitePlayerCopyBtn.addEventListener("click", async () => {
     });
     const data = await res.json();
     if (!data.ok) mapMsg.textContent = data.error || "Couldn't select that map";
+    // The clicked radio already highlights itself natively, but if a Random pick was active,
+    // its tile's "is-active" class is plain Preact-rendered state - nothing clears it on its own.
+    // Force a sync so it turns off now that a specific map was picked instead.
+    await loadState({ syncMaps: true });
+  });
+
+  container.addEventListener("randommap", async (e) => {
+    const res = await fetch("/api/lobby/map", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ map: e.detail.map, mapSource: "local", isRandom: true }),
+    });
+    const data = await res.json();
+    if (!data.ok) mapMsg.textContent = data.error || "Couldn't select that map";
+    // Unlike a normal tile pick, nothing in the DOM changes on its own here (no radio gets
+    // checked, on purpose) - force a map re-render so the Random tile shows as the active pick
+    // and the previously-selected tile (if any) clears. Plain loadState() defaults syncMaps to
+    // false and skips re-rendering maps at all for the host, to avoid disrupting their local
+    // browsing - but this IS an authoritative selection change, so it must sync regardless.
+    await loadState({ syncMaps: true });
   });
 });
 
@@ -302,11 +330,21 @@ wireSubtabs();
 document.querySelectorAll('input[name=teamSize]').forEach((input) => {
   input.addEventListener("change", () => {
     renderRoster(selectedTeamSize());
+    const size = selectedTeamSize();
+    document.querySelectorAll('input[name=smallTeamMode]').forEach((modeInput) => {
+      modeInput.disabled = !(size >= 2 && size <= 4);
+    });
     pushSettings();
   });
 });
 
 document.querySelectorAll('input[name=mode]').forEach((input) => {
+  input.addEventListener("change", () => {
+    pushSettings();
+  });
+});
+
+document.querySelectorAll('input[name=smallTeamMode]').forEach((input) => {
   input.addEventListener("change", () => {
     pushSettings();
   });

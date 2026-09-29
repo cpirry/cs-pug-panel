@@ -23,3 +23,8 @@ export function selectedTeamSize() {
   const checked = document.querySelector("input[name=teamSize]:checked");
   return checked ? Number(checked.value) : 5;
 }
+
+export function selectedSmallTeamMode() {
+  const checked = document.querySelector("input[name=smallTeamMode]:checked");
+  return checked ? checked.value : "defusal";
+}

@@ -24,6 +24,7 @@ def build_state():
             "password": env.get("CS2_PW", ""),
             "rconPassword": env.get("CS2_RCONPW", ""),
             "maxPlayers": env.get("CS2_MAXPLAYERS", ""),
+            "smallTeamMode": env.get("CS2_SMALL_TEAM_MODE", "defusal"),
             "ctTeamName": ct_name,
             "tTeamName": t_name,
         },

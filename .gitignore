@@ -1,1 +1,9 @@
 __pycache__/
+*workspace
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log

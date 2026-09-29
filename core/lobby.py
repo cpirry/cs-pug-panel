@@ -56,6 +56,7 @@ def create_lobby(host_steam_id):
             "teams": {host_steam_id: "t"},
             "selectedMap": "",
             "selectedMapSource": "local",
+            "selectedMapIsRandom": False,
         }
         return code
 
@@ -139,9 +140,11 @@ def move_member(actor_steam_id, steam_id, team, swap_with=None):
         return True
 
 
-def set_selected_map(actor_steam_id, map_id, map_source):
+def set_selected_map(actor_steam_id, map_id, map_source, is_random=False):
     """Sets the lobby's shared map pick, visible to every member. Only the host may set it, and
-    only while the lobby is waiting."""
+    only while the lobby is waiting. is_random flags a pick made via the "Random Map" tile - the
+    actual map is still stored here (start_lobby still needs a real map to launch), it's just not
+    revealed to anyone in the UI (see handler.py's _lobby_info() and maps.js)."""
     if map_source not in ("local", "workshop"):
         return False
     with _lock:
@@ -156,6 +159,7 @@ def set_selected_map(actor_steam_id, map_id, map_source):
             return False
         lobby["selectedMap"] = map_id
         lobby["selectedMapSource"] = map_source
+        lobby["selectedMapIsRandom"] = bool(is_random)
         return True
 
 

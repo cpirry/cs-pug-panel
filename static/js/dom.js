@@ -2,6 +2,7 @@
 // Purpose: Shared DOM element references used across the other modules.
 
 export const mapsCoreEl = document.getElementById("mapsCore");
+export const mapsWingmanEl = document.getElementById("mapsWingman");
 export const mapsExtraEl = document.getElementById("mapsExtra");
 export const mapsWorkshopEl = document.getElementById("mapsWorkshop");
 export const modsEl = document.getElementById("mods");

@@ -876,6 +876,41 @@ body {
   filter: brightness(0.7);
 }
 
+.map-tile-random {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  appearance: none;
+}
+
+.map-tile-random:disabled {
+  cursor: not-allowed;
+  filter: brightness(0.4);
+}
+
+.map-tile-random.is-active {
+  border-color: var(--accent);
+  filter: brightness(1);
+}
+
+.map-tile-random.is-active .map-tile-caption {
+  color: var(--text);
+}
+
+.map-tile-random-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--border);
+}
+
+.map-tile-random-thumb svg {
+  width: 36%;
+  height: 36%;
+}
+
 .map-tile input {
   position: absolute;
   opacity: 0;

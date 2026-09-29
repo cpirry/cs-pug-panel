@@ -26,6 +26,8 @@ from .constants import (
     MIME,
     PROJECT_NAME,
     SERVICE,
+    SMALL_TEAM_DEFUSAL_CFG,
+    SMALL_TEAM_RUSH_CFG,
     STATIC_DIR,
 )
 from .envfile import read_env, write_env
@@ -177,6 +179,7 @@ class Handler(BaseHTTPRequestHandler):
             "allReady": bool(lobby["members"]) and len(ready_set) == len(lobby["members"]),
             "selectedMap": lobby.get("selectedMap", ""),
             "selectedMapSource": lobby.get("selectedMapSource", "local"),
+            "selectedMapIsRandom": lobby.get("selectedMapIsRandom", False),
         }
 
     def do_GET(self):
@@ -313,6 +316,19 @@ class Handler(BaseHTTPRequestHandler):
                 updates["CS2_MAXPLAYERS"] = str(body["maxPlayers"])
             if "map" in body and body["map"] and body.get("mapSource") != "workshop":
                 updates["CS2_STARTMAP"] = body["map"]
+            if "maxPlayers" in body or "smallTeamMode" in body:
+                env = read_env()
+                small_team_mode = body.get("smallTeamMode")
+                if small_team_mode not in ("defusal", "rush"):
+                    small_team_mode = env.get("CS2_SMALL_TEAM_MODE", "defusal")
+                updates["CS2_SMALL_TEAM_MODE"] = small_team_mode
+                max_players = int(updates.get("CS2_MAXPLAYERS") or env.get("CS2_MAXPLAYERS") or 10)
+                team_size = max_players // 2
+                if team_size in (2, 3, 4):
+                    cfg = SMALL_TEAM_RUSH_CFG if small_team_mode == "rush" else SMALL_TEAM_DEFUSAL_CFG
+                    updates["CS2_ADDITIONAL_ARGS"] = f"+exec {cfg}"
+                else:
+                    updates["CS2_ADDITIONAL_ARGS"] = ""
             if updates:
                 write_env(updates)
             if "mode" in body and body["mode"] in ("bo1", "bo3", "bo5"):
@@ -610,7 +626,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
             map_id = body.get("map", "")
             map_source = body.get("mapSource", "local")
-            if not map_id or not set_selected_map(steam_id, map_id, map_source):
+            is_random = bool(body.get("isRandom", False))
+            if not map_id or not set_selected_map(steam_id, map_id, map_source, is_random):
                 self._send_json({"error": "couldn't set the map selection"}, 400)
                 return
             self._send_json({"ok": True})
