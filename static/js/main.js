@@ -35,6 +35,9 @@ import {
   invitePlayerCloseBtn,
   invitePlayerMsg,
   deleteLobbyBtn,
+  mapsCoreEl,
+  mapsExtraEl,
+  mapsWorkshopEl,
 } from "./dom.js";
 import { selectedMap, selectedMapSource } from "./maps.js";
 import { selectedMode, selectedGameMode, teamSizeToMax, selectedTeamSize } from "./settings.js";
@@ -201,6 +204,21 @@ invitePlayerCopyBtn.addEventListener("click", async () => {
     invitePlayerMsg.textContent = "Couldn't copy automatically";
     invitePlayerMsg.className = "msg err";
   }
+});
+
+[mapsCoreEl, mapsExtraEl, mapsWorkshopEl].forEach((container) => {
+  container.addEventListener("change", async (e) => {
+    if (e.target.name !== "map") return;
+    // Just persists which tile is picked (for everyone else to see live) - doesn't touch the
+    // running server. Only "Change Map" below actually applies it.
+    const res = await fetch("/api/lobby/map", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ map: selectedMap(), mapSource: selectedMapSource() }),
+    });
+    const data = await res.json();
+    if (!data.ok) mapMsg.textContent = data.error || "Couldn't select that map";
+  });
 });
 
 mapBtn.addEventListener("click", async () => {

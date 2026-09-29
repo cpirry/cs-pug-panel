@@ -61,3 +61,5 @@ export const invitePlayerCopyBtn = document.getElementById("invitePlayerCopyBtn"
 export const invitePlayerCloseBtn = document.getElementById("invitePlayerCloseBtn");
 export const invitePlayerMsg = document.getElementById("invitePlayerMsg");
 export const deleteLobbyBtn = document.getElementById("deleteLobbyBtn");
+export const contentEl = document.querySelector(".content");
+export const sideNavEl = document.querySelector(".side-nav");
