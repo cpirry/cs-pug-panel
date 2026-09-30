@@ -6,6 +6,7 @@ import time
 
 from .constants import CONTAINER
 from .envfile import read_env
+from .firewall import request_apply as request_firewall_apply
 from .match_state import real_players
 from .proc_status import container_status
 from .util import run
@@ -40,4 +41,5 @@ def idle_monitor(poll_seconds=60):
             idle_for = time.time() - _idle_state["last_active"]
         if idle_for >= idle_minutes * 60:
             run(["docker", "stop", CONTAINER], timeout=30)
+            request_firewall_apply(False)
             mark_activity()
