@@ -88,3 +88,12 @@ DEFAULT_GAMEMODE_CFG = "gamemode_competitive.cfg"
 # host's Defusal/Rush pick (see handler.py's /api/settings).
 SMALL_TEAM_DEFUSAL_CFG = "gamemode_competitive2v2.cfg"
 SMALL_TEAM_RUSH_CFG = "gamemode_rush.cfg"
+
+# core/firewall.py runs Terraform (arch/tform/) as a sibling `docker run` via the host
+# Docker socket, so this must be a HOST-absolute path (resolved by the host daemon), not
+# a path inside the panel's own container - never read via os.path from in here.
+TFORM_HOST_DIR = os.environ.get("TFORM_HOST_DIR", "")
+TERRAFORM_IMAGE = "hashicorp/terraform:1.9.8"
+SCW_ACCESS_KEY = os.environ.get("SCW_ACCESS_KEY", "")
+SCW_SECRET_KEY = os.environ.get("SCW_SECRET_KEY", "")
+SCW_DEFAULT_PROJECT_ID = os.environ.get("SCW_DEFAULT_PROJECT_ID", "")

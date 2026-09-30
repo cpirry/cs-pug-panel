@@ -31,6 +31,7 @@ from .constants import (
     STATIC_DIR,
 )
 from .envfile import read_env, write_env
+from .firewall import request_apply as request_firewall_apply
 from .gamemode_cfg import (
     delete_preset,
     list_gamemode_configs,
@@ -486,6 +487,7 @@ class Handler(BaseHTTPRequestHandler):
                 timeout=60,
             )
             mark_activity()
+            request_firewall_apply(True)
             self._send_json({"ok": code == 0, "output": out + err})
             return
 
@@ -493,6 +495,7 @@ class Handler(BaseHTTPRequestHandler):
             if self._require_login() is None:
                 return
             code, out, err = run(["docker", "stop", CONTAINER], timeout=30)
+            request_firewall_apply(False)
             self._send_json({"ok": code == 0, "output": out + err})
             return
 
@@ -549,25 +552,13 @@ class Handler(BaseHTTPRequestHandler):
                     rcon_command(f'sv_password "{password}"')
                 except (RconError, OSError):
                     pass
-            else:
-                run(
-                    [
-                        "docker",
-                        "compose",
-                        "-p",
-                        PROJECT_NAME,
-                        "-f",
-                        COMPOSE_FILE,
-                        "--env-file",
-                        ENV_PATH,
-                        "up",
-                        "-d",
-                        "--force-recreate",
-                        SERVICE,
-                    ],
-                    timeout=60,
-                )
-                mark_activity()
+
+            # Start Match no longer starts the cs2_server container itself (that now
+            # happens outside the panel) - it only opens the firewall. request_apply() is
+            # a no-op if the ports are already confirmed open, so this is free once
+            # already-open, and self-heals a stuck "running but unreachable" state
+            # otherwise (e.g. a prior open failed on bad creds/a transient Scaleway error).
+            request_firewall_apply(True)
 
             port = read_env().get("CS2_PORT", "27015")
             connect = {

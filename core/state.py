@@ -3,6 +3,7 @@
 
 from .cfg_sync import read_match_format, read_team_names
 from .envfile import read_env
+from .firewall import get_status as get_firewall_status
 from .maps import list_maps
 from .mods import list_mods, read_game_mode
 from .proc_status import container_status
@@ -15,6 +16,7 @@ def build_state():
         "running": container_status() == "running",
         "status": container_status(),
         "maps": list_maps(),
+        "firewall": get_firewall_status(),
         "selectedMap": env.get("CS2_STARTMAP", ""),
         "mode": read_match_format(),
         "gameMode": read_game_mode(),
