@@ -760,6 +760,39 @@ body {
 .msg.ok { color: var(--success); }
 .msg.err { color: var(--danger); }
 
+.firewall-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px 20px;
+  padding: 4px 12px 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--text-dim) 16%, transparent);
+}
+
+.firewall-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.firewall-status.is-open {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+}
+.firewall-status.is-open .firewall-status-dot { background: var(--success); }
+
+.firewall-status.is-error {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+.firewall-status.is-error .firewall-status-dot { background: var(--danger); }
+
 .btn {
   border: 1px solid transparent;
   /* border-radius: 8px; */

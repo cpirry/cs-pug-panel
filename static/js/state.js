@@ -13,6 +13,8 @@ import {
   sideNavEl,
   workshopInput,
   workshopAddBtn,
+  firewallStatusEl,
+  firewallStatusLabelEl,
 } from "./dom.js";
 import { renderAuth } from "./auth.js";
 import { renderLobby } from "./lobby.js";
@@ -39,6 +41,21 @@ export function setStatus(running) {
   setConsoleRunning(running);
 }
 
+function setFirewallStatus(firewall) {
+  const result = firewall && firewall.lastResult;
+  firewallStatusEl.classList.toggle("is-open", result === "open");
+  firewallStatusEl.classList.toggle("is-error", result === "error");
+  firewallStatusLabelEl.textContent =
+    result === "open"
+      ? "Firewall open"
+      : result === "closed"
+      ? "Firewall closed"
+      : result === "error"
+      ? "Firewall error"
+      : "Firewall status unknown";
+  firewallStatusEl.title = result === "error" && firewall.message ? firewall.message : "";
+}
+
 function redirectIfUnauthorized(res) {
   if (res.status === 401) {
     window.location.href = "/";
@@ -58,6 +75,7 @@ export async function loadState({ syncMaps = false } = {}) {
   const isHost = !!(state.auth && state.auth.loggedIn && state.lobby.host === state.auth.steamId);
   cachedIsHost = isHost;
   setStatus(state.running);
+  setFirewallStatus(state.firewall);
   renderAuth(state.auth);
   renderLobby(state.auth, state.lobby);
   renderConsole();
