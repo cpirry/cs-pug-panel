@@ -23,11 +23,12 @@ import {
   steamLogoutBtn,
   lobbyMsg,
   lobbyStartBtn,
-  lobbyResetBtn,
+  forceStopBtn,
   rosterTEl,
   rosterCtEl,
   lobbyCode,
   lobbyCodeCopyBtn,
+  lobbyConnectCopyBtn,
   invitePlayerBtn,
   invitePlayerModal,
   invitePlayerLink,
@@ -55,7 +56,7 @@ import { loadConfig, renderPresets } from "./config.js";
 import {
   toggleReady,
   startMatch,
-  resetLobby,
+  forceStopServer,
   moveMember,
   kickMember,
   deleteLobby,
@@ -87,18 +88,37 @@ function pushSettings(extra = {}) {
 lobbyStartBtn.addEventListener("click", async () => {
   lobbyStartBtn.disabled = true;
   lobbyStartBtn.textContent = "Starting...";
-  await pushSettings({ map: selectedMap() });
-  const data = await startMatch();
-  lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
-  await loadState();
+  try {
+    await pushSettings({ map: selectedMap() });
+    const data = await startMatch();
+    lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
+  } catch {
+    // The request can still have succeeded server-side even if the response never made it
+    // back (e.g. starting the container is slow enough that the connection drops before the
+    // reply is sent) - loadState() below re-derives the real button state from the server
+    // either way, instead of leaving the button stuck on "Starting..." forever.
+    lobbyMsg.textContent = "Lost connection while starting - checking current status...";
+  } finally {
+    await loadState();
+  }
 });
 
-lobbyResetBtn.addEventListener("click", async () => {
-  lobbyResetBtn.disabled = true;
-  const data = await resetLobby();
-  lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
-  await loadState();
-  lobbyResetBtn.disabled = false;
+forceStopBtn.addEventListener("click", async () => {
+  if (!window.confirm("Force stop the server? This stops the container, closes the firewall ports, and resets the lobby back to waiting.")) return;
+  forceStopBtn.disabled = true;
+  forceStopBtn.textContent = "Stopping...";
+  try {
+    const data = await forceStopServer();
+    lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
+  } catch {
+    // As with Start Match, the stop can still have succeeded server-side even if the
+    // response was lost - loadState() re-derives the real state either way.
+    lobbyMsg.textContent = "Lost connection while stopping - checking current status...";
+  } finally {
+    forceStopBtn.textContent = "Force Stop Server";
+    forceStopBtn.disabled = false;
+    await loadState();
+  }
 });
 
 deleteLobbyBtn.addEventListener("click", async () => {
@@ -180,6 +200,19 @@ lobbyCodeCopyBtn.addEventListener("click", async () => {
     setTimeout(() => lobbyCodeCopyBtn.classList.remove("is-copied"), 1200);
   } catch {
     // clipboard unavailable - nothing else to surface for an icon-only button
+  }
+});
+
+lobbyConnectCopyBtn.addEventListener("click", async () => {
+  const command = lobbyConnectCopyBtn.dataset.connectCommand;
+  if (!command) return;
+  try {
+    await navigator.clipboard.writeText(command);
+    const original = lobbyConnectCopyBtn.textContent;
+    lobbyConnectCopyBtn.textContent = "Copied!";
+    setTimeout(() => (lobbyConnectCopyBtn.textContent = original), 1200);
+  } catch {
+    // clipboard unavailable - nothing else to surface here
   }
 });
 

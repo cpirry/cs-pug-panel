@@ -168,25 +168,28 @@ body {
 
 .lobby-connect {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 10px;
+  margin: 16px 0;
+}
+
+.force-stop-btn {
+  align-self: center;
+  margin-top: 12px;
 }
 
 .lobby-connect-link {
-  color: var(--accent);
-  font-weight: 600;
-  font-size: 13px;
+  background: #c9782736;
+  color: rgb(224, 158, 96);
   text-decoration: none;
+  display: inline-block;
+  min-width: 150px;
+  text-align: center;
 }
 
 .lobby-connect-link:hover {
-  text-decoration: underline;
-}
-
-.lobby-connect-text {
-  color: var(--text-dim);
-  font-size: 12px;
-  font-family: "Courier New", monospace;
+  opacity: 0.85;
 }
 
 .server-heading {

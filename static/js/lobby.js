@@ -3,14 +3,14 @@
 
 import {
   deleteLobbyBtn,
+  forceStopBtn,
   lobbyCode,
   lobbyCodeCopyBtn,
   lobbyConnect,
+  lobbyConnectCopyBtn,
   lobbyConnectLink,
-  lobbyConnectText,
   lobbyModal,
   lobbyModalCode,
-  lobbyResetBtn,
   lobbyStartBtn,
 } from "./dom.js";
 
@@ -36,7 +36,7 @@ export function renderLobby(auth, lobby) {
       : isHost
       ? "Start match"
       : "Match ready to start";
-  lobbyResetBtn.hidden = !(isHost && lobby.state === "in_match");
+  forceStopBtn.hidden = !(isHost && lobby.state === "in_match");
   deleteLobbyBtn.hidden = !isHost;
 
   const connect = lobby.connect;
@@ -44,8 +44,10 @@ export function renderLobby(auth, lobby) {
   if (connect) {
     lobbyConnectLink.hidden = !connect.steamUrl;
     if (connect.steamUrl) lobbyConnectLink.href = connect.steamUrl;
-    const host = connect.host || "(connect host not configured)";
-    lobbyConnectText.textContent = `${host}:${connect.port} • password: ${connect.password}`;
+    lobbyConnectCopyBtn.hidden = !connect.host;
+    lobbyConnectCopyBtn.dataset.connectCommand = connect.host
+      ? `connect ${connect.host}:${connect.port}; password ${connect.password}`
+      : "";
   }
 }
 
@@ -83,8 +85,8 @@ export function startMatch() {
   return postLobbyAction("/api/lobby/start");
 }
 
-export function resetLobby() {
-  return postLobbyAction("/api/lobby/reset");
+export function forceStopServer() {
+  return postLobbyAction("/api/lobby/force-stop");
 }
 
 export function moveMember(steamId, team, swapWith) {
