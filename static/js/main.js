@@ -89,7 +89,7 @@ lobbyStartBtn.addEventListener("click", async () => {
   lobbyStartBtn.disabled = true;
   lobbyStartBtn.textContent = "Starting...";
   try {
-    await pushSettings({ map: selectedMap() });
+    await pushSettings({ map: selectedMap(), mapSource: selectedMapSource() });
     const data = await startMatch();
     lobbyMsg.textContent = data.ok ? "" : data.error || "Something went wrong";
   } catch {

@@ -3,6 +3,7 @@
 
 import json
 import os
+import time
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler
 from urllib.error import URLError
@@ -315,8 +316,20 @@ class Handler(BaseHTTPRequestHandler):
                 write_fake_rcon_password(body["rconPassword"])
             if "maxPlayers" in body:
                 updates["CS2_MAXPLAYERS"] = str(body["maxPlayers"])
-            if "map" in body and body["map"] and body.get("mapSource") != "workshop":
-                updates["CS2_STARTMAP"] = body["map"]
+            if "map" in body and body["map"]:
+                # CS2_HOST_WORKSHOP_MAP makes the joedwards32/cs2 entrypoint boot straight
+                # into that workshop item (it downloads/mounts it itself via steamcmd, same
+                # as the live "host_workshop_map" RCON command below) - CS2_STARTMAP is
+                # ignored by the entrypoint whenever CS2_HOST_WORKSHOP_MAP is set, but clear
+                # it anyway so state doesn't lie about what map is actually selected. Clear
+                # the workshop var symmetrically when picking a local map, or a stale
+                # workshop id would silently override the local pick on the next boot.
+                if body.get("mapSource") == "workshop":
+                    updates["CS2_HOST_WORKSHOP_MAP"] = body["map"]
+                    updates["CS2_STARTMAP"] = ""
+                else:
+                    updates["CS2_STARTMAP"] = body["map"]
+                    updates["CS2_HOST_WORKSHOP_MAP"] = ""
             if "maxPlayers" in body or "smallTeamMode" in body:
                 env = read_env()
                 small_team_mode = body.get("smallTeamMode")
@@ -552,12 +565,30 @@ class Handler(BaseHTTPRequestHandler):
                     rcon_command(f'sv_password "{password}"')
                 except (RconError, OSError):
                     pass
+            else:
+                run(
+                    [
+                        "docker",
+                        "compose",
+                        "-p",
+                        PROJECT_NAME,
+                        "-f",
+                        COMPOSE_FILE,
+                        "--env-file",
+                        ENV_PATH,
+                        "up",
+                        "-d",
+                        "--force-recreate",
+                        SERVICE,
+                    ],
+                    timeout=60,
+                )
+                mark_activity()
 
-            # Start Match no longer starts the cs2_server container itself (that now
-            # happens outside the panel) - it only opens the firewall. request_apply() is
-            # a no-op if the ports are already confirmed open, so this is free once
-            # already-open, and self-heals a stuck "running but unreachable" state
-            # otherwise (e.g. a prior open failed on bad creds/a transient Scaleway error).
+            # Fires on both branches: a prior open may have failed (bad creds, a transient
+            # Scaleway error) while the container itself started fine - request_apply() is
+            # a no-op if the ports are already confirmed open, so this is free in the
+            # common case and self-heals a stuck "running but unreachable" state otherwise.
             request_firewall_apply(True)
 
             port = read_env().get("CS2_PORT", "27015")
@@ -584,6 +615,37 @@ class Handler(BaseHTTPRequestHandler):
                 return
             reset_lobby(code, steam_id)
             self._send_json({"ok": True})
+            return
+
+        if parsed.path == "/api/lobby/force-stop":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            code, lobby = find_lobby_for(steam_id)
+            if lobby is None:
+                self._send_json({"error": "not in a lobby"}, 400)
+                return
+            if lobby["host"] != steam_id:
+                self._send_json({"error": "only the lobby host can stop the server"}, 403)
+                return
+
+            run(["docker", "stop", CONTAINER], timeout=60)
+            request_firewall_apply(False)
+
+            # "docker stop" already blocks until the container exits, but CS2 can take a
+            # while to shut down cleanly (or ignore SIGTERM and wait out the grace period
+            # before Docker kills it) - poll for a confirmed exit rather than trusting a
+            # single read, so the lobby only resets (ready states, waiting-for-players view)
+            # once the server is actually down, not while it's still mid-shutdown.
+            stopped = False
+            for _ in range(45):
+                if container_status() != "running":
+                    stopped = True
+                    break
+                time.sleep(1)
+            if stopped:
+                reset_lobby(code, steam_id)
+            self._send_json({"ok": stopped})
             return
 
         if parsed.path == "/api/lobby/ready":
