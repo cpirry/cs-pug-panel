@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Match Details - CS2 Server Panel</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app">
+    <main class="match-page">
+      <a href="/app.html" class="btn">&larr; Back to Match History</a>
+
+      <section class="card match-page-card">
+        <h2 id="matchHeading">Loading...</h2>
+        <div class="card-actions" id="matchActions" hidden>
+          <a id="downloadDemoBtn" class="btn btn-primary" hidden>Download Demo</a>
+          <a id="downloadLogBtn" class="btn btn-primary" hidden>Download Log (Host Only)</a>
+        </div>
+
+        <h3>Counter-Terrorists</h3>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Kills</th>
+              <th>Deaths</th>
+              <th>Assists</th>
+              <th>Headshots</th>
+              <th>K/D</th>
+              <th>HS%</th>
+              <th>ADR</th>
+            </tr>
+          </thead>
+          <tbody id="ctPlayersBody"></tbody>
+        </table>
+
+        <h3>Terrorists</h3>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Kills</th>
+              <th>Deaths</th>
+              <th>Assists</th>
+              <th>Headshots</th>
+              <th>K/D</th>
+              <th>HS%</th>
+              <th>ADR</th>
+            </tr>
+          </thead>
+          <tbody id="tPlayersBody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    function renderTeam(tbody, players) {
+      for (const p of players) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.name}</td>
+          <td>${p.kills}</td>
+          <td>${p.deaths}</td>
+          <td>${p.assists}</td>
+          <td>${p.headshots}</td>
+          <td>${p.kd_ratio}</td>
+          <td>${p.headshot_pct}%</td>
+          <td>${p.adr}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    const id = new URLSearchParams(window.location.search).get("id");
+    const heading = document.getElementById("matchHeading");
+
+    const res = id ? await fetch(`/api/matches/${encodeURIComponent(id)}`) : null;
+    const match = res && res.ok ? await res.json() : null;
+
+    if (!match) {
+      heading.textContent = "Match not found";
+    } else {
+      heading.textContent = `${match.map} - ${match.started_at.replace("T", " ").slice(0, 16)} - CT ${match.score_ct} - T ${match.score_t}`;
+      renderTeam(document.getElementById("ctPlayersBody"), match.players.filter((p) => p.team === "CT"));
+      renderTeam(document.getElementById("tPlayersBody"), match.players.filter((p) => p.team === "T"));
+
+      const actions = document.getElementById("matchActions");
+      const demoBtn = document.getElementById("downloadDemoBtn");
+      const logBtn = document.getElementById("downloadLogBtn");
+      if (match.demo_file) {
+        demoBtn.href = `/api/matches/${encodeURIComponent(id)}/demo`;
+        demoBtn.hidden = false;
+      }
+      // The log route is host-gated server-side regardless (403s for non-hosts) - this is
+      // just to avoid showing a dead-looking button to players who can't use it. Match
+      // history has no per-match host concept, so "host of whichever lobby you're
+      // currently in" (same flag that gates the Admin tab) is the closest available proxy.
+      const stateRes = await fetch("/api/state");
+      if (stateRes.ok) {
+        const state = await stateRes.json();
+        const isHost = !!(state.auth && state.lobby && state.lobby.host === state.auth.steamId);
+        if (isHost) {
+          logBtn.href = `/api/matches/${encodeURIComponent(id)}/log`;
+          logBtn.hidden = false;
+        }
+      }
+      actions.hidden = false;
+    }
+  </script>
+</body>
+</html>

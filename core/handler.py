@@ -59,6 +59,7 @@ from .lobby import (
     toggle_ready,
 )
 from .maps import fetch_workshop_details, parse_workshop_id, save_workshop_map
+from .match_history import demo_download_name, get_match, get_match_file_path, list_matches
 from .match_state import _reset_match_state, list_players, match_elapsed_seconds
 from .mods import toggle_mod, write_game_mode
 from .proc_status import container_status, server_uptime_seconds, tail_console, tail_logs
@@ -109,6 +110,21 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_file_download(self, full_path, download_name):
+        if not os.path.isfile(full_path):
+            self.send_response(404)
+            self.end_headers()
+            return
+        size = os.path.getsize(full_path)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/octet-stream")
+        self.send_header("Content-Length", str(size))
+        self.send_header("Content-Disposition", f'attachment; filename="{download_name}"')
+        self.end_headers()
+        with open(full_path, "rb") as f:
+            while chunk := f.read(65536):
+                self.wfile.write(chunk)
 
     def _read_json(self):
         length = int(self.headers.get("Content-Length", 0))
@@ -197,7 +213,7 @@ class Handler(BaseHTTPRequestHandler):
                     return
             self._send_static("/")
             return
-        if parsed.path == "/app.html":
+        if parsed.path in ("/app.html", "/match.html"):
             steam_id = session_steam_id(self._session_token())
             in_lobby = steam_id and find_lobby_for(steam_id)[1] is not None
             if not in_lobby:
@@ -292,6 +308,48 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json({"error": "preset not found"}, 404)
                 return
             self._send_json({"content": content})
+            return
+        if parsed.path == "/api/matches":
+            if self._require_login() is None:
+                return
+            self._send_json({"matches": list_matches()})
+            return
+        if parsed.path.startswith("/api/matches/"):
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            rest = unquote(parsed.path[len("/api/matches/") :])
+            match_id, _, action = rest.partition("/")
+            match = get_match(match_id)
+            if match is None:
+                self._send_json({"error": "match not found"}, 404)
+                return
+            if action == "":
+                self._send_json(match)
+                return
+            if action == "demo":
+                demo_path = get_match_file_path(match_id, "demo")
+                if demo_path is None:
+                    self._send_json({"error": "no demo recorded for this match"}, 404)
+                    return
+                self._send_file_download(demo_path, demo_download_name(match))
+                return
+            if action == "log":
+                # The raw server log is more useful to debug with than to casually read, and
+                # can reveal things like other players' SteamIDs - host-only, same gating as
+                # the Admin tab, rather than open to every player who was in the match.
+                _, lobby = find_lobby_for(steam_id)
+                is_host = lobby is not None and lobby["host"] == steam_id
+                if not is_host:
+                    self._send_json({"error": "only the lobby host can download the raw log"}, 403)
+                    return
+                log_path = get_match_file_path(match_id, "log")
+                if log_path is None:
+                    self._send_json({"error": "log file not found"}, 404)
+                    return
+                self._send_file_download(log_path, os.path.basename(log_path))
+                return
+            self._send_json({"error": "not found"}, 404)
             return
         self._send_static(parsed.path)
 

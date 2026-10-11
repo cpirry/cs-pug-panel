@@ -44,7 +44,8 @@
     <main class="content">
       <nav class="side-nav">
         <button class="side-nav-btn active" data-tab="lobby">Lobby</button>
-        <button class="side-nav-btn" data-tab="admin">Admin</button>
+        <button class="side-nav-btn" data-tab="history">Match History</button>
+        <button class="side-nav-btn" id="adminNavBtn" data-tab="admin">Admin</button>
       </nav>
 
       <div class="tab-panel tab-panel-split" data-panel="lobby">
@@ -149,6 +150,23 @@
             <div id="mods" class="toggle-list"></div>
           </section>
         </div>
+      </div>
+
+      <div class="tab-panel" data-panel="history" hidden>
+        <section class="card">
+          <h2>Match History</h2>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Map</th>
+                <th>Score</th>
+                <th>Players</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </section>
       </div>
 
       <div class="tab-panel" data-panel="admin" hidden>
