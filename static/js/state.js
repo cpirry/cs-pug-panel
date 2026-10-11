@@ -11,6 +11,7 @@ import {
   serverHeadingNameEl,
   contentEl,
   sideNavEl,
+  adminNavBtn,
   workshopInput,
   workshopAddBtn,
   firewallStatusEl,
@@ -80,8 +81,11 @@ export async function loadState({ syncMaps = false } = {}) {
   renderLobby(state.auth, state.lobby);
   renderConsole();
 
-  sideNavEl.hidden = !isHost;
-  contentEl.classList.toggle("hide-nav", !isHost);
+  // Everyone gets the side-nav now (Lobby/Match History are open to all players) - only the
+  // Admin tab itself stays host-only.
+  sideNavEl.hidden = false;
+  contentEl.classList.remove("hide-nav");
+  adminNavBtn.hidden = !isHost;
 
   // The host's own map pick is local browsing until they click a tile (which persists it
   // immediately) - re-rendering from server state on every poll would otherwise revert whatever

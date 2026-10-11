@@ -66,3 +66,5 @@ export const invitePlayerMsg = document.getElementById("invitePlayerMsg");
 export const deleteLobbyBtn = document.getElementById("deleteLobbyBtn");
 export const contentEl = document.querySelector(".content");
 export const sideNavEl = document.querySelector(".side-nav");
+export const adminNavBtn = document.getElementById("adminNavBtn");
+export const historyTableBody = document.getElementById("historyTableBody");

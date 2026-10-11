@@ -63,6 +63,7 @@ import {
   buildLobbyLink,
 } from "./lobby.js";
 import { loadState, refreshMaps, pollTail } from "./state.js";
+import { renderHistoryTable } from "./history.js";
 
 steamLogoutBtn.addEventListener("click", async () => {
   await fetch("/api/auth/logout", { method: "POST" });
@@ -439,5 +440,6 @@ presetSaveBtn.addEventListener("click", async () => {
 
 loadState({ syncMaps: true });
 loadConfig();
+renderHistoryTable();
 setInterval(pollTail, 3000);
 setInterval(loadState, 3000);

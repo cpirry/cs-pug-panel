@@ -32,6 +32,13 @@ SERVER_CFG = os.path.join(GAME_DIR, "cfg", "server.cfg")
 CONFIG_PRESETS_DIR = os.path.join(GAME_DIR, "cfg", "panel_presets")
 WORKSHOP_MAPS_FILE = os.path.join(GAME_DIR, "cfg", "panel_workshop_maps.json")
 LOGS_DIR = os.path.join(GAME_DIR, "logs")
+# Native CS2 GOTV auto-record output directory - confirmed against real match demos on disk
+# (game/csgo/replays/, holding full-size recordings matching real match durations). An
+# earlier one-off test session was observed writing to game/csgo/addons/metamod/replays/
+# instead, for reasons that were never pinned down - if demos stop showing up again, check
+# both before assuming the correlation logic itself is broken.
+DEMOS_DIR = os.path.join(GAME_DIR, "replays")
+MATCHES_DB_FILE = os.path.join(GAME_DIR, "cfg", "panel_matches.db")
 FAKE_RCON_CFG = os.path.join(GAME_DIR, "addons", "configs", "fake_rcon", "config.cfg")
 MAP_IMAGES_DIR = os.environ.get("MAP_IMAGES_DIR", "/app/map-images")
 
