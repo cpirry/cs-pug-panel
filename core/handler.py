@@ -59,7 +59,14 @@ from .lobby import (
     toggle_ready,
 )
 from .maps import fetch_workshop_details, parse_workshop_id, save_workshop_map
-from .match_history import demo_download_name, get_match, get_match_file_path, list_matches
+from .match_history import (
+    demo_download_name,
+    get_match,
+    get_match_file_path,
+    get_player_matches,
+    get_player_stats,
+    list_matches,
+)
 from .match_state import _reset_match_state, list_players, match_elapsed_seconds
 from .mods import toggle_mod, write_game_mode
 from .proc_status import container_status, server_uptime_seconds, tail_console, tail_logs
@@ -167,6 +174,7 @@ class Handler(BaseHTTPRequestHandler):
             "steamId": steam_id,
             "displayName": summary.get("personaName", steam_id),
             "avatar": summary.get("avatar", ""),
+            "avatarFull": summary.get("avatarFull", ""),
         }
 
     def _lobby_info(self, steam_id):
@@ -213,10 +221,21 @@ class Handler(BaseHTTPRequestHandler):
                     return
             self._send_static("/")
             return
-        if parsed.path in ("/app.html", "/match.html"):
+        if parsed.path == "/app.html":
             steam_id = session_steam_id(self._session_token())
             in_lobby = steam_id and find_lobby_for(steam_id)[1] is not None
             if not in_lobby:
+                self.send_response(302)
+                self.send_header("Location", "/")
+                self.end_headers()
+                return
+            self._send_static(parsed.path)
+            return
+        if parsed.path == "/match.html":
+            # Match history (and its /api/matches backing) is viewable by any logged-in
+            # player regardless of whether they're currently in a lobby - unlike /app.html,
+            # which is the in-lobby app shell and genuinely needs one.
+            if session_steam_id(self._session_token()) is None:
                 self.send_response(302)
                 self.send_header("Location", "/")
                 self.end_headers()
@@ -313,6 +332,18 @@ class Handler(BaseHTTPRequestHandler):
             if self._require_login() is None:
                 return
             self._send_json({"matches": list_matches()})
+            return
+        if parsed.path == "/api/stats/me":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            self._send_json(get_player_stats(steam_id))
+            return
+        if parsed.path == "/api/matches/mine":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            self._send_json({"matches": get_player_matches(steam_id)})
             return
         if parsed.path.startswith("/api/matches/"):
             steam_id = self._require_login()

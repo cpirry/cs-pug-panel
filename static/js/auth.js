@@ -1,7 +1,14 @@
 // auth.js
 // Purpose: Renders the Steam login/account area in the top bar.
 
-import { steamAccount, steamAvatar, steamLoginLink, steamName } from "./dom.js";
+import {
+  steamAccount,
+  steamAccountBtn,
+  steamAccountMenu,
+  steamAvatar,
+  steamLoginLink,
+  steamName,
+} from "./dom.js";
 
 export function renderAuth(auth) {
   if (auth && auth.loggedIn) {
@@ -17,5 +24,17 @@ export function renderAuth(auth) {
   } else {
     steamLoginLink.hidden = false;
     steamAccount.hidden = true;
+    steamAccountMenu.hidden = true;
   }
 }
+
+steamAccountBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  steamAccountMenu.hidden = !steamAccountMenu.hidden;
+});
+
+document.addEventListener("click", (e) => {
+  if (!steamAccountMenu.hidden && !steamAccount.contains(e.target)) {
+    steamAccountMenu.hidden = true;
+  }
+});

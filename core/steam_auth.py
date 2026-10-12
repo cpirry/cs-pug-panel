@@ -25,7 +25,7 @@ _sessions = {}  # token -> steam_id64
 SUMMARY_CACHE_TTL = 300  # seconds - display names/avatars rarely change mid-session
 
 _summary_cache_lock = threading.Lock()
-_summary_cache = {}  # steam_id -> (expires_at, {personaName, avatar})
+_summary_cache = {}  # steam_id -> (expires_at, {personaName, avatar, avatarFull})
 
 
 def build_login_url(return_to, realm):
@@ -87,7 +87,7 @@ def destroy_session(token):
 
 
 def fetch_player_summaries(steam_ids):
-    """Returns {steam_id: {personaName, avatar}} for the given steam_ids, using a short-lived
+    """Returns {steam_id: {personaName, avatar, avatarFull}} for the given steam_ids, using a short-lived
     cache so frequent polling doesn't hammer Steam's API. Missing/failed lookups are simply absent."""
     steam_ids = [s for s in dict.fromkeys(steam_ids) if s]
     if not steam_ids:
@@ -117,12 +117,16 @@ def fetch_player_summaries(steam_ids):
     players = payload.get("response", {}).get("players", [])
     with _summary_cache_lock:
         for p in players:
-            summary = {"personaName": p.get("personaname", p["steamid"]), "avatar": p.get("avatar", "")}
+            summary = {
+                "personaName": p.get("personaname", p["steamid"]),
+                "avatar": p.get("avatar", ""),
+                "avatarFull": p.get("avatarfull", ""),
+            }
             _summary_cache[p["steamid"]] = (now + SUMMARY_CACHE_TTL, summary)
             results[p["steamid"]] = summary
     return results
 
 
 def fetch_player_summary(steam_id):
-    """Returns {personaName, avatar} for steam_id, or None if no API key is configured or the lookup fails."""
+    """Returns {personaName, avatar, avatarFull} for steam_id, or None if no API key is configured or the lookup fails."""
     return fetch_player_summaries([steam_id]).get(steam_id)
