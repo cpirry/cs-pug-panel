@@ -52,18 +52,17 @@ body {
   font-size: 15px;
 }
 
-.brand-icon {
+.brand-stripe-box {
+  display: block;
+  width: 90px;
+  height: 40px;
+  background: repeating-linear-gradient(90deg, #0a7a3d, #0a7a3d 10px, #ffffff 10px, #ffffff 20px);
+}
+
+.topbar-right {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: var(--panel-alt);
-  border: 1px solid var(--border);
-  font-family: "Courier New", monospace;
-  font-size: 12px;
-  color: var(--text);
+  gap: 16px;
 }
 
 .steam-auth {
@@ -89,9 +88,25 @@ body {
 }
 
 .steam-account {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.steam-account-btn {
   display: flex;
   align-items: center;
   gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.steam-account-btn:hover {
+  background: var(--panel-alt);
 }
 
 .steam-avatar {
@@ -101,19 +116,36 @@ body {
   border: 1px solid var(--border);
 }
 
-.steam-logout-btn {
-  border: 1px solid rgba(229, 72, 77, 0.4);
-  /* border-radius: 6px; */
+.steam-account-menu[hidden] {
+  display: none;
+}
+
+.steam-account-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  min-width: 120px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  z-index: 10;
+}
+
+.steam-account-menu-item {
+  display: block;
+  width: 100%;
+  border: none;
   background: transparent;
   color: var(--danger);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 4px 8px;
+  text-align: left;
+  padding: 8px 10px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.steam-logout-btn:hover {
+.steam-account-menu-item:hover {
   background: rgba(229, 72, 77, 0.1);
 }
 
@@ -611,8 +643,8 @@ body {
 }
 
 .landing-avatar {
-  width: 56px;
-  height: 56px;
+  width: 80px;
+  height: 80px;
   border-radius: 8px;
   border: 1px solid var(--border);
 }
@@ -637,6 +669,60 @@ body {
   padding: 8px 10px;
   font-size: 13px;
   width: 140px;
+}
+
+.landing-dashboard {
+  max-width: 900px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.landing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.landing-join-card {
+  max-width: none;
+  height: 100%;
+}
+
+.landing-stats-card h2,
+.landing-recent-card h2 {
+  margin: 0 0 14px 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-tile-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-tile-value {
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .modal-overlay {

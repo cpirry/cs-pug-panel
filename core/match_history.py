@@ -20,6 +20,10 @@ from .match_log_parser import parse_log_file
 
 DEMO_FILENAME_RE = re.compile(r"^auto-(\d{8})-(\d{4})-(.+)-[^-]+\.dem$")
 DEMO_MATCH_SLACK = timedelta(minutes=10)
+# The standard SteamID64 -> Steam3 ([U:1:<account_id>]) offset for individual (universe 1)
+# accounts - match_players.steam_id is stored in the Steam3 format logs use, but panel auth
+# deals in SteamID64, so this converts one way to look a logged-in player's stats up.
+STEAM64_BASE = 76561197960265728
 
 
 def _connect():
@@ -178,6 +182,31 @@ def _with_derived_stats(player, rounds_played):
     return p
 
 
+def get_player_matches(steamid64):
+    """Every match a player appears in, each with their own kills/deaths/assists/ADR for
+    that specific match (not aggregated - see get_player_stats() for the career totals)."""
+    try:
+        account_id = int(steamid64) - STEAM64_BASE
+    except (TypeError, ValueError):
+        return []
+    steam_id = f"[U:1:{account_id}]"
+
+    scan_and_ingest()
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT m.id, m.map, m.score_ct, m.score_t, m.started_at,
+                   mp.kills, mp.deaths, mp.assists, mp.headshots, mp.damage_dealt
+            FROM match_players mp
+            JOIN matches m ON m.id = mp.match_id
+            WHERE mp.steam_id = ?
+            ORDER BY m.started_at DESC
+            """,
+            (steam_id,),
+        ).fetchall()
+    return [_with_derived_stats(dict(r), r["score_ct"] + r["score_t"]) for r in rows]
+
+
 def get_match(match_id):
     scan_and_ingest()
     with _connect() as conn:
@@ -191,6 +220,53 @@ def get_match(match_id):
     result = dict(match)
     rounds_played = result["score_ct"] + result["score_t"]
     result["players"] = [_with_derived_stats(dict(p), rounds_played) for p in players]
+    return result
+
+
+def get_player_stats(steamid64):
+    """Aggregates one player's stats across every match they appear in. steamid64 is the
+    SteamID64 string from panel auth, converted to the Steam3 format match_players.steam_id
+    is stored in."""
+    try:
+        account_id = int(steamid64) - STEAM64_BASE
+    except (TypeError, ValueError):
+        return None
+    steam_id = f"[U:1:{account_id}]"
+
+    scan_and_ingest()
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT mp.kills, mp.deaths, mp.assists, mp.headshots, mp.damage_dealt,
+                   mp.team, m.score_ct, m.score_t
+            FROM match_players mp
+            JOIN matches m ON m.id = mp.match_id
+            WHERE mp.steam_id = ?
+            """,
+            (steam_id,),
+        ).fetchall()
+
+    totals = {"kills": 0, "deaths": 0, "assists": 0, "headshots": 0, "damage_dealt": 0}
+    rounds_total = 0
+    wins = 0
+    for r in rows:
+        for key in totals:
+            totals[key] += r[key]
+        rounds_total += r["score_ct"] + r["score_t"]
+        won = (r["team"] == "CT" and r["score_ct"] > r["score_t"]) or (
+            r["team"] == "T" and r["score_t"] > r["score_ct"]
+        )
+        if won:
+            wins += 1
+
+    matches_played = len(rows)
+    result = dict(totals)
+    result["matches_played"] = matches_played
+    result["wins"] = wins
+    result["losses"] = matches_played - wins
+    result["kd_ratio"] = round(totals["kills"] / totals["deaths"], 2) if totals["deaths"] else float(totals["kills"])
+    result["headshot_pct"] = round(100 * totals["headshots"] / totals["kills"], 1) if totals["kills"] else 0.0
+    result["adr"] = round(totals["damage_dealt"] / rounds_total, 1) if rounds_total else 0.0
     return result
 
 

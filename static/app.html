@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CS2 Server Panel</title>
+<title>she'd gaming</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -12,18 +12,25 @@
   <div class="app">
     <header class="topbar">
       <div class="brand">
-        <span class="brand-icon">&gt;_</span>
-        <span class="brand-name">CS2 Panel</span>
+        <span class="brand-stripe-box"></span>
+        <span class="brand-name">she'd gaming</span>
       </div>
-      <div class="steam-auth">
-        <a href="/auth/steam/login" id="steamLoginLink" class="steam-login-btn">
-          <img src="https://community.akamai.steamstatic.com/public/images/signinthroughsteam/sits_small.png" alt="Sign in through Steam">
-        </a>
-        <div class="steam-account" id="steamAccount" hidden>
-          <img id="steamAvatar" class="steam-avatar" alt="" hidden>
-          <span id="steamName"></span>
-          <button type="button" id="steamLogoutBtn" class="steam-logout-btn">Log Out</button>
+      <div class="topbar-right">
+        <div class="steam-auth">
+          <a href="/auth/steam/login" id="steamLoginLink" class="steam-login-btn">
+            <img src="https://community.akamai.steamstatic.com/public/images/signinthroughsteam/sits_small.png" alt="Sign in through Steam">
+          </a>
+          <div class="steam-account" id="steamAccount" hidden>
+            <button type="button" id="steamAccountBtn" class="steam-account-btn">
+              <img id="steamAvatar" class="steam-avatar" alt="" hidden>
+              <span id="steamName"></span>
+            </button>
+            <div class="steam-account-menu" id="steamAccountMenu" hidden>
+              <button type="button" id="steamLogoutBtn" class="steam-account-menu-item">Log Out</button>
+            </div>
+          </div>
         </div>
+        <span class="brand-stripe-box"></span>
       </div>
     </header>
 
@@ -159,9 +166,8 @@
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Map</th>
                 <th>Score</th>
-                <th>Players</th>
+                <th>Map</th>
               </tr>
             </thead>
             <tbody id="historyTableBody"></tbody>
