@@ -3,7 +3,7 @@
 A web based UI for creating pickup games (PUGs) in Counter-Strike 2. Complete with:
 
 - One click server/match launch
-- Lobby ststem
+- Lobby system
 - Personalised user performance statistics
 - Record of global and user-specific previous matches
 - Game mode selection
