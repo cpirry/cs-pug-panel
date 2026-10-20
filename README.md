@@ -1,14 +1,17 @@
-# cs-server-panel
+# cs2-pug-panel
 
-A web based UI for managing a CS2 server, complete with:
+A web based UI for creating pickup games (PUGs) in Counter-Strike 2. Complete with:
 
-- One click launch
+- One click server/match launch
+- Lobby ststem
+- Personalised user performance statistics
+- Record of global and user-specific previous matches
 - Game mode selection
 - Live map switching
 - Workshop map downloads
-- Monitoring
+- Server monitoring
 - RCON 
-- Mod management
+- Mod management and automatic updating
 - Config editor
 
 ## Usage
