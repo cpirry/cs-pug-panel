@@ -45,6 +45,14 @@ DEMOS_DIR = os.path.join(GAME_DIR, "replays")
 MATCHES_DB_FILE = os.path.join(GAME_DIR, "cfg", "panel_matches.db")
 FAKE_RCON_CFG = os.path.join(GAME_DIR, "addons", "configs", "fake_rcon", "config.cfg")
 MAP_IMAGES_DIR = os.environ.get("MAP_IMAGES_DIR", "/app/map-images")
+ADDONS_DIR = os.path.join(GAME_DIR, "addons")
+GAMEINFO_FILE = os.path.join(GAME_DIR, "gameinfo.gi")
+# Versions installed through the Plugins tab - the most reliable source, since most plugins
+# carry no version file of their own.
+PLUGIN_VERSIONS_FILE = os.path.join(GAME_DIR, "cfg", "panel_plugin_versions.json")
+PLUGIN_BACKUPS_DIR = os.path.join(GAME_DIR, "panel_plugin_backups")
+# Latest-release lookups for the Plugins tab, so they survive panel restarts.
+PLUGIN_LATEST_FILE = os.path.join(GAME_DIR, "cfg", "panel_plugin_latest.json")
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 MIME = {

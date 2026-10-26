@@ -70,6 +70,7 @@ from .match_history import (
 )
 from .match_state import _reset_match_state, list_players, match_elapsed_seconds
 from .mods import sync_bot_fill, toggle_mod, write_game_mode
+from .plugins import check_for_updates, list_plugins, start_update, uninstall as uninstall_plugin
 from .proc_status import (
     READY_STAGES,
     console_ready_stages,
@@ -337,6 +338,11 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path.startswith("/map-images/"):
             self._send_static(parsed.path[len("/map-images/") :], MAP_IMAGES_DIR)
             return
+        if parsed.path == "/api/plugins":
+            if self._require_login() is None:
+                return
+            self._send_json(list_plugins())
+            return
         if parsed.path == "/api/config":
             if self._require_login() is None:
                 return
@@ -578,6 +584,47 @@ class Handler(BaseHTTPRequestHandler):
                 return
             ok = delete_preset(file, body.get("name", ""))
             self._send_json({"ok": ok, "presets": list_presets(file)})
+            return
+
+        if parsed.path == "/api/plugins/update":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            # Downloads and replaces server binaries - host-only, same as the Admin tab itself.
+            _, lobby = find_lobby_for(steam_id)
+            if lobby is None or lobby["host"] != steam_id:
+                self._send_json({"error": "only the lobby host can update plugins"}, 403)
+                return
+            error = start_update(body.get("id", ""))
+            if error:
+                self._send_json({"error": error}, 400)
+                return
+            self._send_json({"ok": True})
+            return
+
+        if parsed.path == "/api/plugins/check":
+            if self._require_login() is None:
+                return
+            error = check_for_updates(force=True)
+            if error:
+                self._send_json({"error": error}, 429)
+                return
+            self._send_json(list_plugins())
+            return
+
+        if parsed.path == "/api/plugins/uninstall":
+            steam_id = self._require_login()
+            if steam_id is None:
+                return
+            _, lobby = find_lobby_for(steam_id)
+            if lobby is None or lobby["host"] != steam_id:
+                self._send_json({"error": "only the lobby host can uninstall plugins"}, 403)
+                return
+            message, error = uninstall_plugin(body.get("id", ""))
+            if error:
+                self._send_json({"error": error}, 400)
+                return
+            self._send_json({"ok": True, "message": message})
             return
 
         if parsed.path == "/api/mods/toggle":

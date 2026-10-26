@@ -30,6 +30,10 @@ import { setConsoleRunning, renderConsole, renderLines, renderPlayers, setLatest
 // whether the map-change button should be host-gated instead of fighting over its disabled state.
 let cachedIsHost = false;
 
+export function isHost() {
+  return cachedIsHost;
+}
+
 export function setStatus(running) {
   mapBtn.disabled = !running || !cachedIsHost;
   mapBtn.title = !cachedIsHost
