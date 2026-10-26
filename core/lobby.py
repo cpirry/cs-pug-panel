@@ -209,6 +209,17 @@ def start_lobby(code, steam_id, connect):
         return True
 
 
+def reset_in_match_lobbies():
+    """reset_lobby() for every in-match lobby, without the host check - for when the server
+    itself goes away (e.g. the automatic stop after a match ends), not a host action."""
+    with _lock:
+        for lobby in _lobbies.values():
+            if lobby["state"] == "in_match":
+                lobby["state"] = "waiting"
+                lobby["ready"] = set()
+                lobby.pop("connect", None)
+
+
 def reset_lobby(code, steam_id):
     """Returns the lobby to waiting (clearing its connect info and everyone's ready state) so the
     same group can start another match without re-sharing the code. Only the host may reset it."""
