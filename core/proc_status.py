@@ -56,6 +56,11 @@ _ready_lock = threading.Lock()
 _ready_started_at = None  # container StartedAt the cached "all stages done" belongs to
 
 
+def container_started_at():
+    """The running container's raw StartedAt - also identifies one particular boot."""
+    return _container_started_at()
+
+
 def _container_started_at():
     code, out, _ = run(["docker", "inspect", "-f", "{{.State.StartedAt}}", CONTAINER])
     raw = out.strip()
@@ -138,16 +143,19 @@ def container_env():
     return env
 
 
-def server_uptime_seconds():
-    code, out, _ = run(["docker", "inspect", "-f", "{{.State.StartedAt}}", CONTAINER])
-    raw = out.strip()
-    if code != 0 or not raw or raw.startswith("0001-01-01"):
+def parse_started_at(raw):
+    """Docker's StartedAt string (UTC, nanosecond precision) as an aware datetime, or None."""
+    if not raw:
         return None
     try:
-        started = datetime.strptime(raw.split(".")[0], "%Y-%m-%dT%H:%M:%S").replace(
-            tzinfo=timezone.utc
-        )
+        return datetime.strptime(raw.split(".")[0], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
     except ValueError:
+        return None
+
+
+def server_uptime_seconds():
+    started = parse_started_at(_container_started_at())
+    if started is None:
         return None
     return int((datetime.now(timezone.utc) - started).total_seconds())
 
