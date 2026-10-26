@@ -186,6 +186,7 @@
           <nav class="subtabs">
             <button class="subtab-btn active" data-subtab="config-editor">Config Editor</button>
             <button class="subtab-btn" data-subtab="monitoring">Monitoring</button>
+            <button class="subtab-btn" data-subtab="plugins">Plugins</button>
           </nav>
 
           <div class="subtab-panel" data-subpanel="config-editor">
@@ -208,6 +209,17 @@
                 <button id="presetSaveBtn" class="btn btn-primary">Save As Alternative</button>
               </div>
               <div id="presetList" class="preset-list"></div>
+            </section>
+          </div>
+
+          <div class="subtab-panel" data-subpanel="plugins" hidden>
+            <section class="card">
+              <div class="card-header-row">
+                <h2>Plugins</h2>
+                <button type="button" id="pluginsRefreshBtn" class="btn btn-primary">Check for updates</button>
+              </div>
+              <p class="plugins-hint" id="pluginsHint"></p>
+              <div id="pluginGrid" class="plugin-grid"></div>
             </section>
           </div>
 

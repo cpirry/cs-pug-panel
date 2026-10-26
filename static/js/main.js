@@ -64,6 +64,7 @@ import {
 } from "./lobby.js";
 import { loadState, refreshMaps, pollTail } from "./state.js";
 import { renderHistoryTable } from "./history.js";
+import { startPluginPolling, stopPluginPolling } from "./plugins.js";
 
 steamLogoutBtn.addEventListener("click", async () => {
   await fetch("/api/auth/logout", { method: "POST" });
@@ -352,6 +353,12 @@ document.querySelectorAll(".side-nav-btn").forEach((btn) => {
     document.querySelectorAll(".tab-panel").forEach((p) => (p.hidden = true));
     btn.classList.add("active");
     document.querySelector(`.tab-panel[data-panel="${btn.dataset.tab}"]`).hidden = false;
+    // Only poll /api/plugins while the Plugins subtab is actually on screen.
+    const pluginsShown =
+      btn.dataset.tab === "admin" &&
+      document.querySelector('.admin-subnav .subtab-btn.active')?.dataset.subtab === "plugins";
+    if (pluginsShown) startPluginPolling();
+    else stopPluginPolling();
   });
 });
 
@@ -361,6 +368,8 @@ document.querySelectorAll(".admin-subnav .subtab-btn").forEach((btn) => {
       consoleEl.scrollTop = consoleEl.scrollHeight;
       logsEl.scrollTop = logsEl.scrollHeight;
     }
+    if (btn.dataset.subtab === "plugins") startPluginPolling();
+    else stopPluginPolling();
   });
 });
 
