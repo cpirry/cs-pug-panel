@@ -1,4 +1,4 @@
-# cs2-pug-panel
+# cs-pug-panel
 
 A web based UI for creating pickup games (PUGs) in Counter-Strike 2. Complete with:
 
