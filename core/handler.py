@@ -31,7 +31,7 @@ from .constants import (
     SMALL_TEAM_RUSH_CFG,
     STATIC_DIR,
 )
-from .envfile import read_env, write_env
+from .envfile import player_slots, read_env, sourcetv_slots, write_env
 from .firewall import get_status as get_firewall_status
 from .firewall import request_apply as request_firewall_apply
 from .gamemode_cfg import (
@@ -73,6 +73,7 @@ from .mods import toggle_mod, write_game_mode
 from .proc_status import (
     READY_STAGES,
     console_ready_stages,
+    container_env,
     container_status,
     server_uptime_seconds,
     tail_console,
@@ -93,6 +94,11 @@ from .steam_auth import (
     verify_callback,
 )
 from .util import run, sanitize_cvar_string
+
+# .env settings the server only reads at launch (-maxplayers, the small-team +exec cfg) - a
+# running server started under different values has to be recreated, not reused, to pick
+# them up.
+BOOT_ONLY_ENV_KEYS = ("CS2_MAXPLAYERS", "CS2_ADDITIONAL_ARGS")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -438,7 +444,9 @@ class Handler(BaseHTTPRequestHandler):
                 updates["CS2_RCONPW"] = body["rconPassword"]
                 write_fake_rcon_password(body["rconPassword"])
             if "maxPlayers" in body:
-                updates["CS2_MAXPLAYERS"] = str(body["maxPlayers"])
+                # +1 when SourceTV is on: it occupies a client slot, and without the extra
+                # one a full lobby's last player is turned away ("Server is full").
+                updates["CS2_MAXPLAYERS"] = str(int(body["maxPlayers"]) + sourcetv_slots(read_env()))
             if "map" in body and body["map"]:
                 # CS2_HOST_WORKSHOP_MAP makes the joedwards32/cs2 entrypoint boot straight
                 # into that workshop item (it downloads/mounts it itself via steamcmd, same
@@ -459,8 +467,7 @@ class Handler(BaseHTTPRequestHandler):
                 if small_team_mode not in ("defusal", "rush"):
                     small_team_mode = env.get("CS2_SMALL_TEAM_MODE", "defusal")
                 updates["CS2_SMALL_TEAM_MODE"] = small_team_mode
-                max_players = int(updates.get("CS2_MAXPLAYERS") or env.get("CS2_MAXPLAYERS") or 10)
-                team_size = max_players // 2
+                team_size = player_slots({**env, **updates}) // 2
                 if team_size in (2, 3, 4):
                     cfg = SMALL_TEAM_RUSH_CFG if small_team_mode == "rush" else SMALL_TEAM_DEFUSAL_CFG
                     updates["CS2_ADDITIONAL_ARGS"] = f"+exec {cfg}"
@@ -683,7 +690,15 @@ class Handler(BaseHTTPRequestHandler):
 
             password = generate_match_password()
             write_env({"CS2_PW": password})
-            if container_status() == "running":
+            env = read_env()
+            booted_env = container_env()
+            boot_settings_match = all(
+                booted_env.get(key, "") == env.get(key, "") for key in BOOT_ONLY_ENV_KEYS
+            )
+            # Reuse an already-running server only if it was booted with the lobby's current
+            # team size - otherwise e.g. a 5v5 start on a server still up from a 2v2 lobby
+            # keeps -maxplayers 4 and turns away everyone past the 4th player.
+            if container_status() == "running" and boot_settings_match:
                 try:
                     rcon_command(f'sv_password "{password}"')
                 except (RconError, OSError):
@@ -714,7 +729,7 @@ class Handler(BaseHTTPRequestHandler):
             # common case and self-heals a stuck "running but unreachable" state otherwise.
             request_firewall_apply(True)
 
-            port = read_env().get("CS2_PORT", "27015")
+            port = env.get("CS2_PORT", "27015")
             connect = {
                 "host": CS2_CONNECT_HOST,
                 "port": port,
