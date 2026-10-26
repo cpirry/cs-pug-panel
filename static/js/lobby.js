@@ -12,6 +12,9 @@ import {
   lobbyModal,
   lobbyModalCode,
   lobbyStartBtn,
+  serverLoading,
+  serverLoadingFill,
+  serverLoadingLabel,
 } from "./dom.js";
 
 export function renderLobby(auth, lobby) {
@@ -40,7 +43,17 @@ export function renderLobby(auth, lobby) {
   deleteLobbyBtn.hidden = !isHost;
 
   const connect = lobby.connect;
-  lobbyConnect.hidden = !connect;
+  // The join buttons only appear once the server can actually take players (console fully
+  // booted and firewall open) - until then a striped progress bar stands in for them.
+  const server = lobby.server;
+  const serverReady = !!(server && server.ready);
+  serverLoading.hidden = !connect || serverReady;
+  if (connect && !serverReady) {
+    const progress = server ? server.progress : 0;
+    serverLoadingFill.style.width = `${Math.round(progress * 100)}%`;
+    serverLoadingLabel.textContent = server ? server.label : "Starting server...";
+  }
+  lobbyConnect.hidden = !connect || !serverReady;
   if (connect) {
     lobbyConnectLink.hidden = !connect.steamUrl;
     if (connect.steamUrl) lobbyConnectLink.href = connect.steamUrl;
