@@ -2,7 +2,7 @@
 # Purpose: Builds the aggregated state payload served at /api/state.
 
 from .cfg_sync import read_match_format, read_team_names
-from .envfile import read_env
+from .envfile import player_slots, read_env
 from .firewall import get_status as get_firewall_status
 from .maps import list_maps
 from .mods import list_mods, read_game_mode
@@ -25,7 +25,7 @@ def build_state():
             "serverName": env.get("CS2_SERVERNAME", ""),
             "password": env.get("CS2_PW", ""),
             "rconPassword": env.get("CS2_RCONPW", ""),
-            "maxPlayers": env.get("CS2_MAXPLAYERS", ""),
+            "maxPlayers": str(player_slots(env)),
             "smallTeamMode": env.get("CS2_SMALL_TEAM_MODE", "defusal"),
             "ctTeamName": ct_name,
             "tTeamName": t_name,

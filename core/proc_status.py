@@ -124,6 +124,20 @@ def console_ready_stages():
     return len(READY_STAGES), None
 
 
+def container_env():
+    """The running container's environment as {key: value} - i.e. the .env values it was
+    actually booted with, which can lag behind .env once settings change mid-run."""
+    code, out, _ = run(["docker", "inspect", "-f", "{{range .Config.Env}}{{println .}}{{end}}", CONTAINER])
+    if code != 0:
+        return {}
+    env = {}
+    for line in out.splitlines():
+        key, sep, value = line.partition("=")
+        if sep:
+            env[key] = value
+    return env
+
+
 def server_uptime_seconds():
     code, out, _ = run(["docker", "inspect", "-f", "{{.State.StartedAt}}", CONTAINER])
     raw = out.strip()

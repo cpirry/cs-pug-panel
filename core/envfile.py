@@ -24,6 +24,24 @@ def read_env():
     return values
 
 
+def sourcetv_slots(env):
+    """SourceTV joins the server as a client and takes one of the -maxplayers slots, so
+    CS2_MAXPLAYERS holds the player count plus this. Everything showing or reasoning about
+    team size subtracts it back out."""
+    return 1 if env.get("TV_ENABLE", "0").strip().lower() in ("1", "true", "yes") else 0
+
+
+def player_slots(env):
+    """CS2_MAXPLAYERS minus the SourceTV slot - the number of actual players (both teams)."""
+    try:
+        total = int(env.get("CS2_MAXPLAYERS") or 0)
+    except ValueError:
+        total = 0
+    if total <= 0:
+        return 10
+    return max(1, total - sourcetv_slots(env))
+
+
 def write_env(updates):
     updates = dict(updates)
     lines = []
