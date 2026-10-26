@@ -206,6 +206,62 @@ body {
   margin: 16px 0;
 }
 
+.server-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+/* Same green/white stripes as .brand-stripe-box - the faded stripes are the track and the
+   solid ones slide along inside the fill as it grows. */
+.server-loading-bar {
+  position: relative;
+  width: 270px;
+  max-width: 100%;
+  height: 24px;
+  overflow: hidden;
+  background: repeating-linear-gradient(90deg, #0a7a3d, #0a7a3d 10px, #ffffff 10px, #ffffff 20px);
+}
+
+.server-loading-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  opacity: 0.8;
+}
+
+.server-loading-fill {
+  position: relative;
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #0a7a3d, #0a7a3d 10px, #ffffff 10px, #ffffff 20px);
+  animation: server-loading-slide 0.6s linear infinite;
+  transition: width 0.6s ease;
+}
+
+@keyframes server-loading-slide {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 20px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .server-loading-fill {
+    animation: none;
+  }
+}
+
+.server-loading-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
 .force-stop-btn {
   align-self: center;
   margin-top: 12px;

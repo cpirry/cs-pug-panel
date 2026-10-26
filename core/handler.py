@@ -32,6 +32,7 @@ from .constants import (
     STATIC_DIR,
 )
 from .envfile import read_env, write_env
+from .firewall import get_status as get_firewall_status
 from .firewall import request_apply as request_firewall_apply
 from .gamemode_cfg import (
     delete_preset,
@@ -69,7 +70,14 @@ from .match_history import (
 )
 from .match_state import _reset_match_state, list_players, match_elapsed_seconds
 from .mods import toggle_mod, write_game_mode
-from .proc_status import container_status, server_uptime_seconds, tail_console, tail_logs
+from .proc_status import (
+    READY_STAGES,
+    console_ready_stages,
+    container_status,
+    server_uptime_seconds,
+    tail_console,
+    tail_logs,
+)
 from .rcon import RconError, rcon_command
 from .state import build_state
 from .steam_auth import (
@@ -177,6 +185,31 @@ class Handler(BaseHTTPRequestHandler):
             "avatarFull": summary.get("avatarFull", ""),
         }
 
+    def _server_readiness(self):
+        """Startup progress for an in-match lobby: the container running, every console
+        READY_STAGES milestone, and the firewall confirmed open. The join buttons stay hidden
+        until all of them are done, so nobody gets sent to a server that can't take them yet."""
+        status = container_status()
+        if status == "exited":
+            # e.g. the boot-time update failed all its retries and the entrypoint gave up
+            return {"ready": False, "progress": 0.0, "label": "Server stopped - check the console"}
+        if status != "running":
+            return {"ready": False, "progress": 0.0, "label": "Starting server..."}
+        done, pending_label = console_ready_stages()
+        firewall_result = get_firewall_status()["lastResult"]
+        firewall_open = firewall_result == "open"
+        total = 1 + len(READY_STAGES) + 1
+        completed = 1 + done + (1 if firewall_open else 0)
+        if pending_label:
+            label = pending_label
+        elif firewall_result == "error":
+            label = "Firewall error"
+        elif not firewall_open:
+            label = "Opening firewall..."
+        else:
+            label = "Ready"
+        return {"ready": completed == total, "progress": completed / total, "label": label}
+
     def _lobby_info(self, steam_id):
         if not steam_id:
             return None
@@ -202,6 +235,7 @@ class Handler(BaseHTTPRequestHandler):
             "members": members,
             "state": lobby["state"],
             "connect": lobby.get("connect"),
+            "server": self._server_readiness() if lobby["state"] == "in_match" else None,
             "allReady": bool(lobby["members"]) and len(ready_set) == len(lobby["members"]),
             "selectedMap": lobby.get("selectedMap", ""),
             "selectedMapSource": lobby.get("selectedMapSource", "local"),
