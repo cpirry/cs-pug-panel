@@ -1,4 +1,9 @@
 .*ignore
 *.md
 *.txt
+*workspace
+
 build.sh
+
+__pycache__/
+arch/
