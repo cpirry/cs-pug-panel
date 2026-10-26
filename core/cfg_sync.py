@@ -4,7 +4,7 @@
 import os
 import re
 
-from .constants import FAKE_RCON_CFG, SERVER_CFG
+from .constants import COMPETITIVE_SERVER_CFG, FAKE_RCON_CFG, SERVER_CFG
 from .util import sanitize_cvar_string
 
 
@@ -81,6 +81,43 @@ def write_molotov_glass(enabled):
         out.append(f"sv_molotov_broken_glass_trap {value}")
     with open(SERVER_CFG, "w") as f:
         f.write("\n".join(out) + "\n")
+
+
+BOT_FILL_COMMENT = "// Fill empty slots with bots (set by control panel)"
+BOT_FILL_LINE_RE = re.compile(r"\s*bot_quota(_mode)?\s+")
+
+
+def read_bot_fill():
+    if not os.path.exists(COMPETITIVE_SERVER_CFG):
+        return False
+    with open(COMPETITIVE_SERVER_CFG) as f:
+        return any(re.match(r"\s*bot_quota_mode\s+\"?fill\"?\s*$", line) for line in f)
+
+
+def write_bot_fill(enabled, quota):
+    """bot_quota_mode fill keeps humans + bots at bot_quota: bots top up the empty slots and
+    one is kicked each time a human joins, mid-match included. Disabling just removes the
+    panel's lines so gamemode_competitive.cfg's own bot settings apply again. Any other
+    lines in the file are left alone."""
+    lines = []
+    if os.path.exists(COMPETITIVE_SERVER_CFG):
+        with open(COMPETITIVE_SERVER_CFG) as f:
+            lines = f.read().splitlines()
+    out = [
+        line
+        for line in lines
+        if not BOT_FILL_LINE_RE.match(line) and line != BOT_FILL_COMMENT
+    ]
+    while out and not out[-1].strip():
+        out.pop()
+    if enabled:
+        if out:
+            out.append("")
+        out.append(BOT_FILL_COMMENT)
+        out.append("bot_quota_mode fill")
+        out.append(f"bot_quota {int(quota)}")
+    with open(COMPETITIVE_SERVER_CFG, "w") as f:
+        f.write("\n".join(out) + ("\n" if out else ""))
 
 
 def read_team_names():

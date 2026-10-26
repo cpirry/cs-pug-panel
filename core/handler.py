@@ -69,7 +69,7 @@ from .match_history import (
     list_matches,
 )
 from .match_state import _reset_match_state, list_players, match_elapsed_seconds
-from .mods import toggle_mod, write_game_mode
+from .mods import sync_bot_fill, toggle_mod, write_game_mode
 from .proc_status import (
     READY_STAGES,
     console_ready_stages,
@@ -475,6 +475,11 @@ class Handler(BaseHTTPRequestHandler):
                     updates["CS2_ADDITIONAL_ARGS"] = ""
             if updates:
                 write_env(updates)
+            if "maxPlayers" in body:
+                # Keep bot_quota matching the new team size. Not pushed live: a team size
+                # change only takes effect once the server is recreated with the new
+                # -maxplayers, which re-reads the cfg anyway.
+                sync_bot_fill(apply_live=False)
             if "mode" in body and body["mode"] in ("bo1", "bo3", "bo5"):
                 write_match_format(body["mode"])
 

@@ -29,6 +29,10 @@ COMPOSE_FILE = os.path.join(COMPOSE_DIR, "docker-compose.yml")
 MAPS_DIR = os.path.join(GAME_DIR, "maps")
 PLUGINS_DIR = os.path.join(GAME_DIR, "addons", "counterstrikesharp", "plugins")
 SERVER_CFG = os.path.join(GAME_DIR, "cfg", "server.cfg")
+# Runs on every map load right after gamemode_competitive.cfg (which sets its own
+# bot_quota/bot_quota_mode) - so unlike server.cfg, which runs before it, settings here
+# actually stick. Holds the panel's "fill empty slots with bots" setting.
+COMPETITIVE_SERVER_CFG = os.path.join(GAME_DIR, "cfg", "gamemode_competitive_server.cfg")
 CONFIG_PRESETS_DIR = os.path.join(GAME_DIR, "cfg", "panel_presets")
 WORKSHOP_MAPS_FILE = os.path.join(GAME_DIR, "cfg", "panel_workshop_maps.json")
 LOGS_DIR = os.path.join(GAME_DIR, "logs")
